@@ -1,0 +1,1542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; font-src https://fonts.gstatic.com; connect-src https://*.supabase.co https://*.supabase.io; img-src 'self' data:;">
+<title>VP — Vox Populi Proposals</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0e14;
+    --bg2: #14151f;
+    --bg3: #1c1d2b;
+    --bg4: #242538;
+    --border: #2e2f45;
+    --border2: #3d3e58;
+    --gold: #c9a84c;
+    --gold2: #e8c96a;
+    --gold-dim: #7a6430;
+    --text: #e8e6f0;
+    --text2: #9896b0;
+    --text3: #5f5d78;
+    --accent: #5a8fd4;
+    --accent2: #7aaee8;
+    --red: #d45a5a;
+    --green: #5ad47a;
+    --danger: #c94c4c;
+    --success: #4caa6c;
+    --warn: #c9893c;
+    --radius: 6px;
+    --radius2: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; font-size: 15px; line-height: 1.6; min-height: 100vh; }
+  h1,h2,h3,h4 { font-family: 'Playfair Display', serif; }
+  a { color: var(--gold); text-decoration: none; }
+  a:hover { color: var(--gold2); }
+
+  /* NAV */
+  nav { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 58px; position: sticky; top: 0; z-index: 100; }
+  .nav-logo { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 900; color: var(--gold); letter-spacing: 0.04em; }
+  .nav-logo span { color: var(--text3); font-weight: 700; font-size: 1rem; margin-left: 4px; }
+  .nav-links { display: flex; gap: 1.5rem; align-items: center; }
+  .nav-links button, .nav-links a { background: none; border: none; color: var(--text2); font-size: 0.85rem; cursor: pointer; font-family: 'IBM Plex Sans', sans-serif; letter-spacing: 0.06em; text-transform: uppercase; padding: 4px 0; transition: color 0.15s; }
+  .nav-links button:hover, .nav-links a:hover { color: var(--text); }
+  .nav-links .btn-primary { background: var(--gold); color: var(--bg); border-radius: var(--radius); padding: 6px 14px; font-weight: 600; }
+  .nav-links .btn-primary:hover { background: var(--gold2); }
+  .nav-user { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: var(--text2); }
+  .badge-admin { background: var(--gold-dim); color: var(--gold2); font-size: 0.7rem; padding: 2px 7px; border-radius: 20px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+  .badge-vote { background: var(--danger); color: #fff; font-size: 0.7rem; padding: 2px 7px; border-radius: 20px; font-weight: 600; letter-spacing: 0.06em; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.7} }
+
+  /* LAYOUT */
+  .page { display: none; padding: 2rem; max-width: 1100px; margin: 0 auto; }
+  .page.active { display: block; }
+
+  /* HERO */
+  .hero { text-align: center; padding: 4rem 2rem 3rem; border-bottom: 1px solid var(--border); background: linear-gradient(180deg, #0d0e14 0%, #101118 100%); }
+  .hero h1 { font-size: 3rem; color: var(--text); margin-bottom: 0.5rem; }
+  .hero h1 em { color: var(--gold); font-style: normal; }
+  .hero p { color: var(--text2); max-width: 600px; margin: 0 auto 2rem; font-size: 1.05rem; }
+  .hero-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+
+  /* BUTTONS */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 20px; border-radius: var(--radius); font-size: 0.9rem; font-weight: 500; cursor: pointer; border: none; font-family: inherit; transition: all 0.15s; }
+  .btn-gold { background: var(--gold); color: var(--bg); }
+  .btn-gold:hover { background: var(--gold2); }
+  .btn-outline { background: transparent; border: 1px solid var(--border2); color: var(--text2); }
+  .btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+  .btn-ghost { background: transparent; border: none; color: var(--text2); padding: 6px 12px; }
+  .btn-ghost:hover { color: var(--text); }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-danger:hover { background: #e06060; }
+  .btn-success { background: var(--success); color: #fff; }
+  .btn-sm { padding: 5px 12px; font-size: 0.82rem; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* VOTE BANNER */
+  .vote-banner { background: linear-gradient(135deg, #2a1010, #1a1525); border: 1px solid var(--danger); border-radius: var(--radius2); padding: 1.5rem 2rem; margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: gap; }
+  .vote-banner h3 { color: #e87070; font-family: 'IBM Plex Sans', sans-serif; font-size: 1rem; font-weight: 600; }
+  .vote-banner p { color: var(--text2); font-size: 0.85rem; }
+  .vote-timer { font-family: 'IBM Plex Mono', monospace; font-size: 1.4rem; color: var(--red); }
+
+  /* TABS */
+  .tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 2rem; gap: 0; }
+  .tab { padding: 10px 20px; cursor: pointer; font-size: 0.88rem; color: var(--text2); border-bottom: 2px solid transparent; transition: all 0.15s; background: none; border-top: none; border-left: none; border-right: none; font-family: inherit; letter-spacing: 0.04em; }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+  /* CARDS */
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius2); padding: 1.25rem 1.5rem; margin-bottom: 1rem; }
+  .card:hover { border-color: var(--border2); }
+  .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; }
+  .card-title { font-size: 1rem; font-weight: 600; color: var(--text); }
+  .card-meta { font-size: 0.78rem; color: var(--text3); margin-bottom: 0.5rem; }
+  .card-body { color: var(--text2); font-size: 0.9rem; line-height: 1.65; }
+  .proposal-card { cursor: pointer; transition: all 0.15s; }
+  .proposal-card:hover { border-color: var(--gold-dim); background: var(--bg3); }
+
+  /* CATEGORY TAGS */
+  .cat-path { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 0.5rem; }
+  .cat-chip { background: var(--bg4); border: 1px solid var(--border); border-radius: 20px; font-size: 0.72rem; color: var(--text3); padding: 2px 9px; }
+  .cat-chip:last-child { color: var(--gold-dim); border-color: var(--gold-dim); }
+
+  /* MODAL */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 1000; align-items: center; justify-content: center; padding: 1rem; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--radius2); width: 100%; max-width: 620px; max-height: 90vh; overflow-y: auto; }
+  .modal-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .modal-header h3 { font-family: 'IBM Plex Sans', sans-serif; font-weight: 600; font-size: 1rem; }
+  .modal-body { padding: 1.5rem; }
+  .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 0.75rem; }
+  .close-btn { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 1.2rem; line-height: 1; padding: 4px; }
+  .close-btn:hover { color: var(--text); }
+
+  /* FORMS */
+  .form-group { margin-bottom: 1.25rem; }
+  .form-label { display: block; font-size: 0.82rem; color: var(--text2); margin-bottom: 6px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; }
+  input[type=text], input[type=password], input[type=email], textarea, select {
+    width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 9px 13px; color: var(--text); font-family: inherit; font-size: 0.92rem; outline: none; transition: border-color 0.15s;
+  }
+  input:focus, textarea:focus, select:focus { border-color: var(--gold-dim); }
+  textarea { resize: vertical; min-height: 120px; }
+  select option { background: var(--bg3); }
+  .form-error { color: var(--red); font-size: 0.82rem; margin-top: 5px; }
+  .form-hint { color: var(--text3); font-size: 0.8rem; margin-top: 4px; }
+
+  /* CATEGORY SELECTOR */
+  .cat-selector { margin-bottom: 1.5rem; }
+  .cat-level { margin-bottom: 0.75rem; }
+  .cat-level-label { font-size: 0.75rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .cat-options { display: flex; flex-wrap: wrap; gap: 8px; }
+  .cat-option { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 7px 14px; cursor: pointer; font-size: 0.88rem; color: var(--text2); transition: all 0.15s; }
+  .cat-option:hover { border-color: var(--border2); color: var(--text); }
+  .cat-option.selected { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,0.08); }
+
+  /* PROPOSAL DETAIL */
+  .proposal-detail { max-width: 800px; }
+  .proposal-detail h2 { font-size: 1.8rem; margin-bottom: 0.5rem; }
+  .proposal-content { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius2); padding: 1.5rem; margin: 1.25rem 0; font-size: 0.95rem; line-height: 1.75; color: var(--text2); white-space: pre-wrap; }
+  .addon-section { margin-top: 2rem; }
+  .addon-card { border-left: 3px solid var(--gold-dim); padding-left: 1rem; margin-bottom: 1rem; background: var(--bg2); border-radius: 0 var(--radius) var(--radius) 0; padding: 1rem 1rem 1rem 1.25rem; border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+
+  /* COMMENTS */
+  .comments-section { margin-top: 2rem; }
+  .comment { padding: 1rem 0; border-bottom: 1px solid var(--border); }
+  .comment-author { font-size: 0.82rem; color: var(--text3); margin-bottom: 5px; }
+  .comment-author strong { color: var(--text2); }
+  .comment-body { font-size: 0.9rem; color: var(--text); }
+  .comment-input-area { margin-top: 1.25rem; }
+
+  /* VOTING */
+  .vote-section { max-width: 700px; }
+  .vote-category-block { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius2); margin-bottom: 1.5rem; overflow: hidden; }
+  .vote-cat-header { background: var(--bg3); border-bottom: 1px solid var(--border); padding: 0.85rem 1.25rem; font-size: 0.85rem; color: var(--text2); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+  .vote-option { display: flex; align-items: flex-start; gap: 12px; padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.1s; }
+  .vote-option:last-child { border-bottom: none; }
+  .vote-option:hover { background: var(--bg3); }
+  .vote-option.selected { background: rgba(201,168,76,0.06); }
+  .vote-radio { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border2); flex-shrink: 0; margin-top: 2px; display: flex; align-items: center; justify-content: center; }
+  .vote-option.selected .vote-radio { border-color: var(--gold); }
+  .vote-radio-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); display: none; }
+  .vote-option.selected .vote-radio-dot { display: block; }
+  .vote-option-text { font-size: 0.9rem; }
+  .vote-option-title { color: var(--text); font-weight: 500; margin-bottom: 2px; }
+  .vote-option-body { color: var(--text2); font-size: 0.82rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .no-to-all { color: var(--red); font-style: italic; }
+
+  /* RESULTS */
+  .result-block { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius2); margin-bottom: 1.5rem; overflow: hidden; }
+  .result-cat-header { background: var(--bg3); border-bottom: 1px solid var(--border); padding: 0.85rem 1.25rem; display: flex; justify-content: space-between; align-items: center; }
+  .result-row { padding: 0.85rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+  .result-row:last-child { border-bottom: none; }
+  .result-bar-wrap { flex: 1; height: 6px; background: var(--bg4); border-radius: 3px; overflow: hidden; }
+  .result-bar { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
+  .result-bar.winner { background: var(--gold); }
+  .result-bar.loser { background: var(--border2); }
+  .result-pct { font-size: 0.78rem; color: var(--text3); min-width: 38px; text-align: right; font-family: 'IBM Plex Mono', monospace; }
+  .winner-badge { background: rgba(201,168,76,0.15); border: 1px solid var(--gold-dim); color: var(--gold); font-size: 0.7rem; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+  .fail-badge { background: rgba(197,76,76,0.12); border: 1px solid #7a3030; color: var(--red); font-size: 0.7rem; padding: 2px 8px; border-radius: 20px; }
+
+  /* ADMIN PANEL */
+  .admin-section { margin-bottom: 2.5rem; }
+  .admin-section h3 { font-family: 'IBM Plex Sans', sans-serif; font-size: 1rem; font-weight: 600; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); color: var(--gold); }
+  .tree-item { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--border); }
+  .tree-item:last-child { border-bottom: none; }
+  .tree-indent { width: 20px; flex-shrink: 0; color: var(--border2); font-size: 0.8rem; }
+  .tree-name { flex: 1; font-size: 0.9rem; }
+  .tree-actions { display: flex; gap: 6px; }
+
+  /* ARCHIVE */
+  .session-block { margin-bottom: 2.5rem; }
+  .session-header { font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1rem; padding-bottom: 8px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+  .session-header::before { content: ''; display: block; width: 8px; height: 8px; border-radius: 50%; background: var(--gold-dim); }
+
+  /* DIVIDER */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+  .section-title { font-family: 'IBM Plex Sans', sans-serif; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text3); margin-bottom: 1rem; }
+
+  /* AUTH */
+  .auth-page { max-width: 400px; margin: 5rem auto; padding: 2rem; }
+  .auth-page h2 { font-size: 1.8rem; margin-bottom: 0.5rem; }
+  .auth-page p { color: var(--text2); margin-bottom: 2rem; }
+
+  /* EMPTY */
+  .empty-state { text-align: center; padding: 4rem 2rem; color: var(--text3); }
+  .empty-state h3 { font-family: 'IBM Plex Sans', sans-serif; font-weight: 500; margin-bottom: 0.5rem; color: var(--text2); }
+
+  /* MISC */
+  .flex { display: flex; }
+  .gap-1 { gap: 0.5rem; }
+  .gap-2 { gap: 1rem; }
+  .items-center { align-items: center; }
+  .justify-between { justify-content: space-between; }
+  .mb-1 { margin-bottom: 0.5rem; }
+  .mb-2 { margin-bottom: 1rem; }
+  .mb-3 { margin-bottom: 1.5rem; }
+  .text-sm { font-size: 0.85rem; }
+  .text-xs { font-size: 0.78rem; }
+  .text-muted { color: var(--text2); }
+  .text-dim { color: var(--text3); }
+  .text-gold { color: var(--gold); }
+  .text-red { color: var(--red); }
+  .text-green { color: var(--green); }
+  .bold { font-weight: 600; }
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+  .pill { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; }
+  .pill-gold { background: rgba(201,168,76,0.15); color: var(--gold); border: 1px solid var(--gold-dim); }
+  .pill-blue { background: rgba(90,143,212,0.15); color: var(--accent2); border: 1px solid #3a5a90; }
+  .pill-red { background: rgba(212,90,90,0.15); color: var(--red); border: 1px solid #7a3030; }
+  .pill-green { background: rgba(90,212,122,0.15); color: var(--green); border: 1px solid #307a50; }
+  hr.gold { border-color: var(--gold-dim); opacity: 0.4; }
+
+  .proposal-in-cat { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 8px; cursor: pointer; transition: all 0.12s; }
+  .proposal-in-cat:hover { border-color: var(--gold-dim); }
+  .proposal-in-cat.selected-prop { border-color: var(--gold); background: rgba(201,168,76,0.06); }
+  .new-proposal-area { background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius2); padding: 1.5rem; margin-top: 1rem; }
+
+  .scrollable { max-height: 300px; overflow-y: auto; }
+
+  /* CATEGORY DETAILS PANEL */
+  .cat-details-panel { background: linear-gradient(135deg, #1a1b2a, #141520); border: 1px solid var(--gold-dim); border-radius: var(--radius2); padding: 1.1rem 1.4rem; margin: 0.75rem 0 1rem; position: relative; }
+  .cat-details-panel::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--gold-dim), transparent); border-radius: var(--radius2) var(--radius2) 0 0; }
+  .cat-details-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--gold-dim); margin-bottom: 0.4rem; display: flex; align-items: center; gap: 6px; }
+  .cat-details-label::before { content: '📋'; font-size: 0.75rem; }
+  .cat-details-text { font-size: 0.9rem; color: var(--text2); line-height: 1.7; white-space: pre-wrap; }
+  .cat-details-toggle { background: none; border: 1px solid var(--border); border-radius: var(--radius); padding: 3px 10px; font-size: 0.75rem; color: var(--text3); cursor: pointer; font-family: inherit; transition: all 0.12s; margin-left: auto; }
+  .cat-details-toggle:hover { border-color: var(--gold-dim); color: var(--gold); }
+
+  /* CATALOGUE PAGE */
+  .catalogue-tree { }
+  .cat-group { margin-bottom: 1.5rem; }
+  .cat-group-root { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius2); overflow: hidden; margin-bottom: 1rem; }
+  .cat-group-root-header { background: var(--bg3); border-bottom: 1px solid var(--border); padding: 0.9rem 1.25rem; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: background 0.12s; }
+  .cat-group-root-header:hover { background: var(--bg4); }
+  .cat-group-root-name { font-weight: 700; font-size: 1rem; color: var(--text); display: flex; align-items: center; gap: 10px; }
+  .cat-group-root-name .cat-chevron { font-size: 0.7rem; color: var(--text3); transition: transform 0.2s; }
+  .cat-group-root-name .cat-chevron.open { transform: rotate(90deg); }
+  .cat-group-children { }
+  .cat-child-item { padding: 0.75rem 1.25rem 0.75rem 2rem; border-bottom: 1px solid var(--border); }
+  .cat-child-item:last-child { border-bottom: none; }
+  .cat-child-name { font-weight: 600; font-size: 0.92rem; color: var(--text); margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+  .cat-child-details { font-size: 0.85rem; color: var(--text2); line-height: 1.65; margin-top: 6px; white-space: pre-wrap; }
+  .cat-grandchild-item { padding: 0.6rem 1.25rem 0.6rem 3.5rem; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.15); }
+  .cat-grandchild-item:last-child { border-bottom: none; }
+  .cat-root-details { padding: 0.75rem 1.25rem; border-bottom: 1px solid var(--border); font-size: 0.88rem; color: var(--text2); line-height: 1.65; white-space: pre-wrap; background: rgba(201,168,76,0.03); }
+
+  /* HOW TO USE PAGE */
+  .howto-section { margin-bottom: 2.5rem; }
+  .howto-section h3 { font-size: 1.3rem; color: var(--gold); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 10px; }
+  .howto-step { display: flex; gap: 1rem; margin-bottom: 1.25rem; }
+  .howto-step-num { width: 28px; height: 28px; border-radius: 50%; background: var(--gold-dim); color: var(--gold2); font-size: 0.78rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+  .howto-step-content { flex: 1; }
+  .howto-step-title { font-weight: 600; color: var(--text); margin-bottom: 3px; font-size: 0.95rem; }
+  .howto-step-body { color: var(--text2); font-size: 0.88rem; line-height: 1.65; }
+  .howto-tip { background: linear-gradient(135deg, #1a1b2a, #141520); border: 1px solid var(--border2); border-left: 3px solid var(--gold-dim); border-radius: 0 var(--radius) var(--radius) 0; padding: 0.75rem 1rem; margin: 0.75rem 0; font-size: 0.88rem; color: var(--text2); }
+  .howto-tip strong { color: var(--gold); }
+  .howto-intro { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius2); padding: 1.5rem; margin-bottom: 2.5rem; }
+  .howto-intro p { color: var(--text2); line-height: 1.75; margin-bottom: 0.75rem; }
+  .howto-intro p:last-child { margin-bottom: 0; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo" onclick="showPage('landing')" style="cursor:pointer">VP<span>// Proposals</span></div>
+  <div class="nav-links" id="navLinks"></div>
+</nav>
+
+<!-- PAGES -->
+<div id="pageLanding" class="page active">
+  <div class="hero">
+    <h1>Vox <em>Populi</em></h1>
+    <p>A structured space to propose, discuss, and vote on changes. Every voice matters.</p>
+    <div class="hero-actions" id="heroActions"></div>
+  </div>
+  <div style="padding: 2rem; max-width: 1100px; margin: 0 auto;">
+    <div id="voteBanner"></div>
+    <div class="tabs">
+      <button class="tab active" onclick="switchFeedTab('all')">All Proposals</button>
+      <button class="tab" onclick="switchFeedTab('addons')">Add-on Proposals</button>
+      <button class="tab" onclick="switchFeedTab('passed')">Passed</button>
+      <button class="tab" onclick="switchFeedTab('failed')">Failed</button>
+      <button class="tab" onclick="switchFeedTab('sessions')">Past Sessions</button>
+    </div>
+    <div id="feedContent"></div>
+  </div>
+</div>
+
+<div id="pageNewProposal" class="page">
+  <div style="max-width: 800px;">
+    <div class="flex items-center gap-2 mb-3">
+      <button class="btn btn-ghost btn-sm" onclick="showPage('landing')">← Back</button>
+      <h2 style="font-size:1.6rem;">New Proposal</h2>
+    </div>
+    <div id="newProposalContent"></div>
+  </div>
+</div>
+
+<div id="pageProposal" class="page">
+  <div class="proposal-detail" id="proposalDetailContent"></div>
+</div>
+
+<div id="pageVote" class="page">
+  <div class="vote-section">
+    <div class="flex items-center gap-2 mb-3">
+      <button class="btn btn-ghost btn-sm" onclick="showPage('landing')">← Back</button>
+      <h2 style="font-size:1.6rem;">Cast Your Vote</h2>
+    </div>
+    <div id="voteContent"></div>
+  </div>
+</div>
+
+<div id="pageAdmin" class="page">
+  <div style="max-width: 900px;">
+    <h2 style="font-size:1.8rem; margin-bottom:0.5rem;">Admin Panel</h2>
+    <p class="text-muted mb-3" style="font-size:0.9rem;">Manage categories, users, and voting sessions.</p>
+    <div class="tabs">
+      <button class="tab active" onclick="switchAdminTab('categories')">Categories</button>
+      <button class="tab" onclick="switchAdminTab('voting')">Voting</button>
+      <button class="tab" onclick="switchAdminTab('users')">Users</button>
+    </div>
+    <div id="adminContent"></div>
+  </div>
+</div>
+
+<div id="pageAuth" class="page">
+  <div class="auth-page" id="authContent"></div>
+</div>
+
+<div id="pageHowTo" class="page">
+  <div style="max-width: 760px;">
+    <div class="flex items-center gap-2 mb-3">
+      <button class="btn btn-ghost btn-sm" onclick="showPage('landing')">← Back</button>
+      <h2 style="font-size:1.8rem;">How to Use</h2>
+    </div>
+    <div id="howToContent"></div>
+  </div>
+</div>
+
+<div id="pageCatalogue" class="page">
+  <div style="max-width: 860px;">
+    <div class="flex items-center gap-2 mb-3">
+      <button class="btn btn-ghost btn-sm" onclick="showPage('landing')">← Back</button>
+      <h2 style="font-size:1.8rem;">Category Catalogue</h2>
+    </div>
+    <p class="text-muted" style="margin-bottom:1.5rem;font-size:0.92rem;">Browse all categories and sub-categories. Each entry may include notes from the admins on what belongs there.</p>
+    <div id="catalogueContent"></div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modalBox">
+    <div class="modal-header">
+      <h3 id="modalTitle"></h3>
+      <button class="close-btn" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer" id="modalFooter"></div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// ★  SUPABASE SETUP — edit these two lines, nothing else  ★
+// ============================================================
+const SUPABASE_URL     = 'https://fnwtncgximjyblkczbbi.supabase.co';       // e.g. https://xxxx.supabase.co
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZud3RuY2d4aW1qeWJsa2N6YmJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyNzg2NzMsImV4cCI6MjA5Mjg1NDY3M30.mHjA-qVgzt5JViu7Ty2x4IFatbL_gih5PMTcFc5ekow'; // starts with eyJ…
+
+// ============================================================
+// SUPABASE REST HELPERS
+// ============================================================
+const _cfg = () => SUPABASE_URL !== 'YOUR_SUPABASE_URL';
+
+async function _req(path, method, body, extra = {}) {
+  let res;
+  try {
+    res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+      method,
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Prefer': extra.prefer || 'return=representation',
+        ...(extra.headers || {})
+      },
+      body: body != null ? JSON.stringify(body) : undefined
+    });
+  } catch (networkErr) {
+    // "Failed to fetch" lands here — give a clear actionable message
+    throw new Error(
+      'Cannot reach Supabase. Possible causes:\n' +
+      '• Your Supabase project is paused (free tier pauses after inactivity) — visit supabase.com and resume it.\n' +
+      '• The SUPABASE_URL or SUPABASE_ANON_KEY in this file is wrong.\n' +
+      '• Your browser is blocking the request (ad-blocker / firewall).\n\n' +
+      'Original error: ' + networkErr.message
+    );
+  }
+  if (!res.ok) {
+    let e;
+    try { e = await res.json(); } catch(_) {}
+    const msg = (e && (e.message || e.hint || e.details)) || `HTTP ${res.status}`;
+    if (res.status === 401 || res.status === 403) {
+      throw new Error(`Permission denied (${res.status}). Make sure Row Level Security is DISABLED on all tables in Supabase → Authentication → Policies.`);
+    }
+    if (res.status === 404) {
+      throw new Error(`Table not found (404 on "${path.split('?')[0]}"). Have you run the setup SQL in Supabase → SQL Editor?`);
+    }
+    throw new Error(msg);
+  }
+  const t = await res.text(); return t ? JSON.parse(t) : null;
+}
+const sbGet    = (t, q='')  => _req(`${t}?${q}`,           'GET',   null);
+const sbPost   = (t, d)     => _req(t,                      'POST',  d);
+const sbPatch  = (t, q, d)  => _req(`${t}?${q}`,           'PATCH', d);
+const sbDelete = (t, q)     => _req(`${t}?${q}`,           'DELETE',null, {prefer:'return=minimal'});
+const sbUpsert = (t, d)     => _req(t,                      'POST',  d,   {prefer:'resolution=merge-duplicates,return=representation'});
+
+// ============================================================
+// IN-MEMORY CACHE  (rebuilt on every page visit)
+// ============================================================
+let db = { users:[], categories:[], proposals:[], comments:[], votes:[], sessions:[], currentSession:null };
+let currentUser   = null;
+let currentFeedTab  = 'all';
+let currentAdminTab = 'categories';
+
+async function refreshDB() {
+  if (!_cfg()) return;
+  const [users, cats, props, cmts, votes, sessions, settings] = await Promise.all([
+    sbGet('users',     'select=id,username,is_admin,created_at&order=created_at.asc'),
+    sbGet('categories','select=*&order=created_at.asc'),
+    sbGet('proposals', 'select=*&order=created_at.asc'),
+    sbGet('comments',  'select=*&order=created_at.asc'),
+    sbGet('votes',     'select=*&order=created_at.asc'),
+    sbGet('sessions',  'select=*&order=session_number.asc'),
+    sbGet('settings',  'select=*')
+  ]);
+  db.users      = (users||[]).map(u=>({id:u.id, username:u.username, isAdmin:u.is_admin, createdAt:+new Date(u.created_at)}));
+  db.categories = (cats||[]).map(c=>({id:c.id, name:c.name, parentId:c.parent_id||null, details:c.details||'', createdAt:+new Date(c.created_at)}));
+  db.proposals  = (props||[]).map(p=>({id:p.id, title:p.title, body:p.body, categoryId:p.category_id, parentId:p.parent_id||null, author:p.author, authorId:p.author_id, createdAt:+new Date(p.created_at), archived:p.archived, status:p.status, sessionNumber:p.session_number}));
+  db.comments   = (cmts||[]).map(c=>({id:c.id, proposalId:c.proposal_id, author:c.author, authorId:c.author_id, body:c.body, replyTo:c.reply_to||null, replyToCommentId:c.reply_to_comment_id||null, createdAt:+new Date(c.created_at)}));
+  db.votes      = (votes||[]).map(v=>({id:v.id, userId:v.user_id, sessionId:v.session_id, selections:v.selections||{}, addonSelections:v.addon_selections||{}, createdAt:+new Date(v.created_at)}));
+  db.sessions   = (sessions||[]).map(s=>({id:s.id, sessionNumber:s.session_number, startTime:+new Date(s.start_time), endTime:+new Date(s.end_time), votingActive:s.voting_active, archived:s.archived}));
+  const cs = (settings||[]).find(s=>s.key==='current_session');
+  db.currentSession = (cs && cs.value) ? cs.value : null;
+  // keep currentUser in sync (admin flag may have changed)
+  if (currentUser) {
+    const fresh = db.users.find(u=>u.id===currentUser.id);
+    if (fresh) currentUser = {...fresh, _pass: currentUser._pass};
+  }
+}
+
+// ============================================================
+// LOADING OVERLAY
+// ============================================================
+function setLoading(on) {
+  let el = document.getElementById('_loadingOverlay');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = '_loadingOverlay';
+    el.style.cssText = 'position:fixed;inset:0;background:rgba(13,14,20,.85);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;';
+    el.innerHTML = '<div style="width:40px;height:40px;border:3px solid #2e2f45;border-top-color:#c9a84c;border-radius:50%;animation:spin .7s linear infinite"></div><div style="color:#5f5d78;font-size:.8rem;letter-spacing:.1em;text-transform:uppercase">Loading…</div><style>@keyframes spin{to{transform:rotate(360deg)}}</style>';
+    document.body.appendChild(el);
+  }
+  el.style.display = on ? 'flex' : 'none';
+}
+
+// ============================================================
+// AUTH
+// ============================================================
+async function login(username, password) {
+  const rows = await sbGet('users', `username=eq.${encodeURIComponent(username)}&select=*`);
+  if (!rows || !rows.length) return false;
+  const u = rows[0];
+  // plain-text password stored in DB (same design as original)
+  if (u.password !== password) return false;
+  currentUser = {id:u.id, username:u.username, isAdmin:u.is_admin, _pass:password};
+  sessionStorage.setItem('vp_uid', u.id);
+  sessionStorage.setItem('vp_pw',  password);
+  return true;
+}
+
+function logout() {
+  currentUser = null;
+  sessionStorage.removeItem('vp_uid');
+  sessionStorage.removeItem('vp_pw');
+  showPage('landing');
+}
+
+async function tryRestoreSession() {
+  const uid = sessionStorage.getItem('vp_uid');
+  const pw  = sessionStorage.getItem('vp_pw');
+  if (!uid || !pw) return;
+  try {
+    const rows = await sbGet('users', `id=eq.${uid}&select=*`);
+    if (rows && rows.length) {
+      const u = rows[0];
+      currentUser = {id:u.id, username:u.username, isAdmin:u.is_admin, _pass:pw};
+    }
+  } catch(e) {
+    // Session restore failed (e.g. DB offline) — just stay logged out
+    sessionStorage.removeItem('vp_uid');
+    sessionStorage.removeItem('vp_pw');
+  }
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+async function showPage(page, data) {
+  if (!_cfg()) {
+    // Show setup screen
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.getElementById('pageLanding').classList.add('active');
+    renderNav(); renderHero(); renderVoteBanner();
+    document.getElementById('feedContent').innerHTML = _setupHtml();
+    return;
+  }
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  setLoading(true);
+  try { await refreshDB(); } catch(e) {
+    setLoading(false);
+    document.getElementById('pageLanding').classList.add('active');
+    renderNav(); renderHero();
+    document.getElementById('voteBanner').innerHTML = '';
+    document.getElementById('feedContent').innerHTML = `
+      <div style="max-width:640px;margin:2rem auto;background:var(--bg2);border:1px solid var(--danger);border-radius:var(--radius2);padding:2rem 2.5rem">
+        <h3 style="font-family:'IBM Plex Sans';color:#e87070;margin-bottom:0.75rem">⚠ Database Connection Error</h3>
+        <pre style="white-space:pre-wrap;font-size:0.82rem;color:var(--text2);line-height:1.7;font-family:'IBM Plex Mono',monospace;background:var(--bg4);padding:1rem;border-radius:var(--radius);overflow-x:auto">${escHtml(e.message)}</pre>
+        <button class="btn btn-outline btn-sm" style="margin-top:1rem" onclick="showPage('landing')">Retry</button>
+      </div>`;
+    return;
+  }
+  setLoading(false);
+
+  if (page==='landing') {
+    document.getElementById('pageLanding').classList.add('active'); renderFeed();
+  } else if (page==='new-proposal') {
+    if (!currentUser) { showPage('auth',{next:'new-proposal'}); return; }
+    document.getElementById('pageNewProposal').classList.add('active'); renderNewProposal();
+  } else if (page==='proposal') {
+    document.getElementById('pageProposal').classList.add('active'); renderProposalDetail(data);
+  } else if (page==='vote') {
+    if (!currentUser) { showPage('auth',{next:'vote'}); return; }
+    document.getElementById('pageVote').classList.add('active'); renderVotePage();
+  } else if (page==='admin') {
+    if (!currentUser||!currentUser.isAdmin) return;
+    document.getElementById('pageAdmin').classList.add('active'); renderAdmin();
+  } else if (page==='auth') {
+    document.getElementById('pageAuth').classList.add('active'); renderAuth(data);
+  } else if (page==='howto') {
+    document.getElementById('pageHowTo').classList.add('active'); renderHowTo();
+  } else if (page==='catalogue') {
+    document.getElementById('pageCatalogue').classList.add('active'); renderCatalogue();
+  }
+  renderNav(); renderHero(); renderVoteBanner();
+}
+
+function _setupHtml() {
+  return `<div style="max-width:640px;margin:3rem auto;background:var(--bg2);border:1px solid var(--gold-dim);border-radius:var(--radius2);padding:2rem 2.5rem">
+    <h2 style="font-size:1.4rem;color:var(--gold);margin-bottom:1rem">⚙️ One-time Supabase Setup</h2>
+    <p style="color:var(--text2);margin-bottom:1.5rem;line-height:1.7">Open this HTML file in a text editor and replace the two placeholder values near the top of the <code style="background:var(--bg4);padding:1px 6px;border-radius:3px;color:var(--gold2);font-size:.85rem">&lt;script&gt;</code> block:</p>
+    <div style="background:var(--bg4);border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:1.5rem;font-family:'IBM Plex Mono',monospace;font-size:.82rem;line-height:1.9;color:var(--text2)">
+      const SUPABASE_URL &nbsp;&nbsp;&nbsp;&nbsp;= <span style="color:#e87070">'YOUR_SUPABASE_URL'</span>;<br>
+      const SUPABASE_ANON_KEY = <span style="color:#e87070">'YOUR_SUPABASE_ANON_KEY'</span>;
+    </div>
+    <p style="color:var(--text2);margin-bottom:1rem;line-height:1.7">
+      <strong style="color:var(--text)">Step 1 —</strong> Go to <a href="https://supabase.com" target="_blank">supabase.com</a>, create a free account, then create a new project.<br><br>
+      <strong style="color:var(--text)">Step 2 —</strong> In your project, go to <strong>SQL Editor</strong> and run the setup SQL (see below).<br><br>
+      <strong style="color:var(--text)">Step 3 —</strong> Go to <strong>Project Settings → API</strong>. Copy your <em>Project URL</em> and <em>anon public</em> key into this file.<br><br>
+      <strong style="color:var(--text)">Step 4 —</strong> Upload the edited file to your host. Done.<br><br>
+      <strong style="color:var(--text)">⚠ Free tier note —</strong> Supabase pauses free projects after 1 week of inactivity. If you get a connection error, visit <a href="https://supabase.com" target="_blank">supabase.com</a>, open your project, and click <strong>Restore project</strong>. It takes about 30 seconds.<br><br>
+      <strong style="color:var(--text)">Default admin login —</strong> username: <code style="background:var(--bg4);padding:1px 6px;border-radius:3px;color:var(--gold2);font-size:.85rem">admin</code> &nbsp; password: <code style="background:var(--bg4);padding:1px 6px;border-radius:3px;color:var(--gold2);font-size:.85rem">admin</code>
+    </p>
+    <div style="margin-top:1rem;display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap">
+      <button class="btn btn-outline btn-sm" onclick="testConnection()">🔌 Test Connection</button>
+      <span id="connTestResult" style="font-size:0.82rem;color:var(--text2)"></span>
+    </div>
+    <details style="margin-top:1rem">
+      <summary style="cursor:pointer;color:var(--gold);font-size:.88rem;font-weight:600">Show setup SQL to run in Supabase</summary>
+      <pre style="margin-top:1rem;background:var(--bg4);border-radius:var(--radius);padding:1rem;font-size:.75rem;color:var(--text2);overflow-x:auto;line-height:1.6">-- Run this entire block in Supabase → SQL Editor
+
+create table if not exists users (
+  id uuid primary key default gen_random_uuid(),
+  username text unique not null,
+  password text not null,
+  is_admin boolean default false,
+  created_at timestamptz default now()
+);
+
+create table if not exists categories (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  parent_id uuid references categories(id),
+  details text default '',
+  created_at timestamptz default now()
+);
+
+create table if not exists proposals (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  body text not null,
+  category_id uuid references categories(id),
+  parent_id uuid references proposals(id),
+  author text not null,
+  author_id uuid references users(id),
+  archived boolean default false,
+  status text,
+  session_number int,
+  created_at timestamptz default now()
+);
+
+create table if not exists comments (
+  id uuid primary key default gen_random_uuid(),
+  proposal_id uuid references proposals(id) on delete cascade,
+  author text not null,
+  author_id uuid references users(id),
+  body text not null,
+  reply_to text,
+  reply_to_comment_id uuid,
+  created_at timestamptz default now()
+);
+
+create table if not exists votes (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references users(id),
+  session_id uuid references sessions(id),
+  selections jsonb default '{}',
+  addon_selections jsonb default '{}',
+  created_at timestamptz default now()
+);
+
+create table if not exists sessions (
+  id uuid primary key default gen_random_uuid(),
+  session_number int not null,
+  start_time timestamptz not null,
+  end_time timestamptz not null,
+  voting_active boolean default true,
+  archived boolean default false,
+  created_at timestamptz default now()
+);
+
+create table if not exists settings (
+  key text primary key,
+  value jsonb
+);
+
+-- Enable public read/write via anon key (Row Level Security off for simplicity)
+alter table users     disable row level security;
+alter table categories disable row level security;
+alter table proposals  disable row level security;
+alter table comments   disable row level security;
+alter table votes      disable row level security;
+alter table sessions   disable row level security;
+alter table settings   disable row level security;
+
+-- Create your first admin account (change username/password as desired)
+insert into users (username, password, is_admin)
+values ('admin', 'admin', true)
+on conflict (username) do nothing;</pre>
+    </details>
+  </div>`;
+}
+
+function renderNav() {
+  const nav = document.getElementById('navLinks');
+  const voting = isVotingActive();
+  let html = '';
+  html += `<button onclick="showPage('howto')">How to Use</button>`;
+  html += `<button onclick="showPage('catalogue')">Catalogue</button>`;
+  if (currentUser) {
+    if (currentUser.isAdmin) html += `<button onclick="showPage('admin')">Admin</button>`;
+    html += `<span class="nav-user"><span style="color:var(--text2)">${escHtml(currentUser.username)}</span>`;
+    if (currentUser.isAdmin) html += ` <span class="badge-admin">Admin</span>`;
+    if (voting) html += ` <span class="badge-vote">VOTE LIVE</span>`;
+    html += `</span><button onclick="logout()">Sign out</button>`;
+  } else {
+    html += `<button onclick="showPage('auth')">Sign in</button>`;
+    html += `<button class="btn-primary" onclick="showPage('auth',{register:true})">Register</button>`;
+  }
+  nav.innerHTML = html;
+}
+
+function renderHero() {
+  const actions = document.getElementById('heroActions');
+  if (!actions) return;
+  const voting = isVotingActive();
+  if (voting) {
+    actions.innerHTML = `<button class="btn btn-gold" onclick="showPage('vote')">🗳 Cast Your Vote</button>`;
+  } else {
+    actions.innerHTML = currentUser
+      ? `<button class="btn btn-gold" onclick="showPage('new-proposal')">+ New Proposal</button>`
+      : `<button class="btn btn-gold" onclick="showPage('auth')">Sign in to Propose</button>`;
+  }
+}
+
+// ============================================================
+// VOTING STATUS
+// ============================================================
+function isVotingActive() {
+  if (!db.currentSession) return false;
+  const s = db.currentSession;
+  return s.votingActive && Date.now() < s.endTime;
+}
+
+function renderVoteBanner() {
+  const el = document.getElementById('voteBanner');
+  if (!el) return;
+  if (!isVotingActive()) { el.innerHTML=''; return; }
+  const s = db.currentSession;
+  const rem = Math.max(0, s.endTime - Date.now());
+  const h = String(Math.floor(rem/3600000)).padStart(2,'0');
+  const m = String(Math.floor((rem%3600000)/60000)).padStart(2,'0');
+  const sc = String(Math.floor((rem%60000)/1000)).padStart(2,'0');
+  el.innerHTML = `<div class="vote-banner">
+    <div><h3>⚡ Voting is Live — Session #${s.sessionNumber}</h3><p>New proposals are paused. Cast your vote before the session ends.</p></div>
+    <div style="text-align:right"><div class="vote-timer mono">${h}:${m}:${sc}</div><button class="btn btn-danger btn-sm" style="margin-top:8px" onclick="showPage('vote')">Vote Now</button></div>
+  </div>`;
+}
+
+// auto-finalize when timer expires
+let _finalizing = false;
+setInterval(async () => {
+  renderVoteBanner();
+  if (!_finalizing && db.currentSession && db.currentSession.votingActive && Date.now() >= db.currentSession.endTime) {
+    _finalizing = true;
+    await finalizeSession().catch(console.error);
+    _finalizing = false;
+  }
+}, 1000);
+
+// ============================================================
+// CATEGORIES  (in-memory, already loaded by refreshDB)
+// ============================================================
+function getChildren(parentId) { return db.categories.filter(c=>c.parentId===(parentId||null)); }
+function getCatPath(catId) {
+  const path = []; let cur = db.categories.find(c=>c.id===catId);
+  while (cur) { path.unshift(cur); cur = cur.parentId ? db.categories.find(c=>c.id===cur.parentId) : null; }
+  return path;
+}
+function isLeafCat(catId) { return getChildren(catId).length===0; }
+function catPathStr(catId) { return getCatPath(catId).map(c=>c.name).join(' › '); }
+
+// ============================================================
+// FEED
+// ============================================================
+function switchFeedTab(tab) {
+  currentFeedTab = tab;
+  document.querySelectorAll('#pageLanding .tab').forEach((t,i)=>{
+    t.classList.toggle('active', ['all','addons','passed','failed','sessions'][i]===tab);
+  });
+  renderFeed();
+}
+
+function renderFeed() {
+  const el = document.getElementById('feedContent');
+  if (!el) return;
+  if (!_cfg()) { el.innerHTML = _setupHtml(); return; }
+
+  if (currentFeedTab==='all') {
+    const proposals = db.proposals.filter(p=>!p.parentId&&!p.archived);
+    if (!proposals.length) { el.innerHTML=`<div class="empty-state"><h3>No proposals yet</h3><p>Be the first to propose a change.</p></div>`; return; }
+    el.innerHTML = proposals.slice().reverse().map(p=>renderProposalCard(p)).join('');
+  } else if (currentFeedTab==='addons') {
+    const addons = db.proposals.filter(p=>p.parentId&&!p.archived);
+    if (!addons.length) { el.innerHTML=`<div class="empty-state"><h3>No add-on proposals yet</h3></div>`; return; }
+    el.innerHTML = addons.slice().reverse().map(p=>{ const parent=db.proposals.find(pp=>pp.id===p.parentId); return renderProposalCard(p,parent); }).join('');
+  } else if (currentFeedTab==='passed'||currentFeedTab==='failed') {
+    const status = currentFeedTab;
+    const snums = [...new Set(db.proposals.filter(p=>p.status===status).map(p=>p.sessionNumber))].sort((a,b)=>b-a);
+    if (!snums.length) { el.innerHTML=`<div class="empty-state"><h3>No ${status} proposals yet</h3></div>`; return; }
+    el.innerHTML = snums.map(sn=>{
+      const props = db.proposals.filter(p=>p.status===status&&p.sessionNumber===sn);
+      return `<div class="session-block"><div class="session-header">Session #${sn} — ${props.length} proposal${props.length!==1?'s':''}</div>${props.map(p=>renderProposalCard(p)).join('')}</div>`;
+    }).join('');
+  } else if (currentFeedTab==='sessions') {
+    if (!db.sessions.length) { el.innerHTML=`<div class="empty-state"><h3>No past sessions yet</h3><p>Completed voting sessions will appear here.</p></div>`; return; }
+    el.innerHTML = db.sessions.slice().reverse().map(ss=>{
+      const vc = db.votes.filter(v=>v.sessionId===ss.id).length;
+      const pc = db.proposals.filter(p=>p.status==='passed'&&p.sessionNumber===ss.sessionNumber).length;
+      const fc = db.proposals.filter(p=>p.status==='failed'&&p.sessionNumber===ss.sessionNumber).length;
+      return `<div class="card" style="margin-bottom:1rem">
+        <div class="flex justify-between items-center" style="margin-bottom:.75rem">
+          <div><span class="mono text-sm bold">Session #${ss.sessionNumber}</span><span class="text-dim text-xs" style="margin-left:8px">${new Date(ss.startTime).toLocaleDateString()}</span></div>
+          <span class="text-dim text-xs">${vc} vote${vc!==1?'s':''}</span>
+        </div>
+        <div style="display:flex;gap:1rem;margin-bottom:1rem"><span class="pill pill-green">✓ ${pc} passed</span><span class="pill pill-red">✗ ${fc} failed</span></div>
+        <div id="sessionResults_${ss.id}" style="display:none">${renderResults(ss.id)}</div>
+        <button class="btn btn-outline btn-sm" onclick="toggleSessionResults('${ss.id}')">View Results</button>
+      </div>`;
+    }).join('');
+  }
+}
+
+function toggleSessionResults(sid) {
+  const el=document.getElementById('sessionResults_'+sid), btn=el&&el.nextElementSibling;
+  if (!el) return;
+  if (el.style.display==='none') { el.style.display='block'; if(btn) btn.textContent='Hide Results'; }
+  else { el.style.display='none'; if(btn) btn.textContent='View Results'; }
+}
+
+function renderProposalCard(p, parent) {
+  const path    = catPathStr(p.categoryId);
+  const cmtCount = db.comments.filter(c=>c.proposalId===p.id).length;
+  const addonCount = !p.parentId ? db.proposals.filter(a=>a.parentId===p.id&&!a.archived).length : 0;
+  const statusPill = p.status==='passed' ? `<span class="pill pill-green">Passed</span>` : p.status==='failed' ? `<span class="pill pill-red">Failed</span>` : '';
+  const addonPill  = p.parentId ? `<span class="pill pill-gold">Add-on</span>` : '';
+  const parentRef  = parent ? `<div class="text-xs text-dim mb-1">↳ Add-on to: <span class="text-gold">${escHtml(parent.title)}</span></div>` : '';
+  const isAdmin    = currentUser && currentUser.isAdmin;
+  return `<div class="card proposal-card" style="position:relative">
+    <div style="cursor:pointer" onclick="showPage('proposal','${p.id}')">
+      <div class="cat-path">${path.split(' › ').map(s=>`<span class="cat-chip">${escHtml(s)}</span>`).join('')}</div>
+      ${parentRef}
+      <div class="card-header"><div class="card-title">${escHtml(p.title)}</div><div style="display:flex;gap:5px;flex-shrink:0">${statusPill}${addonPill}</div></div>
+      <div class="card-body" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${escHtml(p.body)}</div>
+      <div class="card-meta" style="margin-top:8px;display:flex;gap:12px">
+        <span>by <strong>${escHtml(p.author)}</strong></span><span>${timeAgo(p.createdAt)}</span>
+        ${cmtCount?`<span>💬 ${cmtCount}</span>`:''}${addonCount?`<span>🔗 ${addonCount} add-ons</span>`:''}
+      </div>
+    </div>
+    ${isAdmin?`<button class="btn btn-danger btn-sm" style="position:absolute;top:10px;right:10px;z-index:2" onclick="event.stopPropagation();adminRemoveProposal('${p.id}')">Remove</button>`:''}
+  </div>`;
+}
+
+// ============================================================
+// NEW PROPOSAL PAGE
+// ============================================================
+let _selectedCatPath=[], _selectedExistingProposal=null, _addonMode=false;
+
+function renderNewProposal() {
+  _selectedCatPath=[]; _selectedExistingProposal=null; _addonMode=false;
+  document.getElementById('newProposalContent').innerHTML = buildNewProposalUI();
+}
+function buildNewProposalUI() {
+  if (isVotingActive()) return `<div class="card"><p class="text-muted">Proposals are disabled during a voting session. Come back after the vote!</p></div>`;
+  return `<div class="cat-selector" id="catSelectorArea">${renderCatLevels()}</div><div id="proposalWriteArea"></div>`;
+}
+function renderCatLevels() {
+  let html = renderCatLevel(getChildren(null),0,null);
+  for (let i=0;i<_selectedCatPath.length;i++) {
+    const ch=getChildren(_selectedCatPath[i]); if(ch.length) html+=renderCatLevel(ch,i+1,null);
+  }
+  return html;
+}
+function renderCatLevel(cats, levelIdx) {
+  const labels=['Category','Sub-category','Sub-sub-category','Type','Sub-type'];
+  const label = labels[levelIdx]||'Sub-type';
+  const selId  = _selectedCatPath[levelIdx];
+  const selCat = selId ? db.categories.find(c=>c.id===selId) : null;
+  const details = selCat && selCat.details ? selCat.details.trim() : '';
+  return `<div class="cat-level">
+    <div class="cat-level-label">Select ${label}</div>
+    <div class="cat-options">${cats.map(c=>`<button class="cat-option ${_selectedCatPath[levelIdx]===c.id?'selected':''}" onclick="selectCat('${c.id}',${levelIdx})">${escHtml(c.name)}</button>`).join('')}</div>
+    ${details?`<div class="cat-details-panel"><div class="cat-details-label"><span>${escHtml(selCat.name)} — Guidance</span><button class="cat-details-toggle" onclick="toggleCatDetailsPanel(this)">Hide</button></div><div class="cat-details-text">${escHtml(details)}</div></div>`:''}
+  </div>`;
+}
+function toggleCatDetailsPanel(btn) {
+  const txt=btn.closest('.cat-details-panel').querySelector('.cat-details-text');
+  if (txt.style.display==='none') { txt.style.display=''; btn.textContent='Hide'; } else { txt.style.display='none'; btn.textContent='Show'; }
+}
+function selectCat(catId, levelIdx) {
+  _selectedCatPath=_selectedCatPath.slice(0,levelIdx); _selectedCatPath[levelIdx]=catId;
+  _selectedExistingProposal=null; _addonMode=false;
+  document.getElementById('catSelectorArea').innerHTML=renderCatLevels();
+  const leaf = _selectedCatPath.length>0 && isLeafCat(_selectedCatPath[_selectedCatPath.length-1]);
+  document.getElementById('proposalWriteArea').innerHTML = leaf ? renderLeafProposalArea() : '';
+}
+function renderLeafProposalArea() {
+  const catId = _selectedCatPath[_selectedCatPath.length-1];
+  const existing = db.proposals.filter(p=>p.categoryId===catId&&!p.parentId&&!p.archived);
+  let html='';
+  if (existing.length) {
+    html+=`<div class="mb-2"><div class="section-title">Existing Proposals in this Category</div><div class="scrollable">
+      ${existing.map(p=>`<div class="proposal-in-cat ${_selectedExistingProposal===p.id?'selected-prop':''}" onclick="selectExistingProposal('${p.id}')"><div style="font-weight:500;font-size:.9rem">${escHtml(p.title)}</div><div style="font-size:.8rem;color:var(--text3)">by ${escHtml(p.author)} · ${timeAgo(p.createdAt)}</div></div>`).join('')}
+    </div></div>`;
+  }
+  if (_selectedExistingProposal) {
+    const parent=db.proposals.find(p=>p.id===_selectedExistingProposal);
+    const addons=db.proposals.filter(p=>p.parentId===_selectedExistingProposal&&!p.archived);
+    html+=`<div class="new-proposal-area"><div style="margin-bottom:1rem;padding-bottom:.75rem;border-bottom:1px solid var(--border)"><div class="text-sm text-muted mb-1">Writing an <span style="color:var(--gold)">Add-on Proposal</span> to:</div><div style="font-weight:600">${escHtml(parent.title)}</div></div>`;
+    if(addons.length) html+=`<div class="mb-2"><div class="section-title">Existing Add-ons</div>${addons.map(a=>`<div class="proposal-in-cat"><div style="font-size:.88rem;font-weight:500">${escHtml(a.title)}</div></div>`).join('')}</div>`;
+    html+=renderWriteForm(true)+`</div>`;
+  } else {
+    html+=`<div class="new-proposal-area"><div class="section-title" style="margin-bottom:.75rem">Write New Proposal</div>${renderWriteForm(false)}</div>`;
+  }
+  return html;
+}
+function renderWriteForm(isAddon) {
+  return `<div class="form-group"><label class="form-label">Title</label><input type="text" id="propTitle" placeholder="Concise title for your proposal"/></div>
+    <div class="form-group"><label class="form-label">Proposal</label><textarea id="propBody" placeholder="Describe the change you'd like to see…"></textarea></div>
+    <button class="btn btn-gold" onclick="submitProposal(${isAddon})">Publish ${isAddon?'Add-on ':''}Proposal</button>`;
+}
+function selectExistingProposal(propId) {
+  _selectedExistingProposal = _selectedExistingProposal===propId ? null : propId;
+  _addonMode = !!_selectedExistingProposal;
+  document.getElementById('proposalWriteArea').innerHTML=renderLeafProposalArea();
+}
+async function submitProposal(isAddon) {
+  const title=document.getElementById('propTitle').value.trim(), body=document.getElementById('propBody').value.trim();
+  if(!title){alert('Please enter a title.');return;} if(!body){alert('Please write your proposal.');return;}
+  const catId=_selectedCatPath[_selectedCatPath.length-1];
+  setLoading(true);
+  try {
+    const rows=await sbPost('proposals',{title,body,category_id:catId,parent_id:isAddon?_selectedExistingProposal:null,author:currentUser.username,author_id:currentUser.id,archived:false,status:null,session_number:null});
+    await showPage('proposal',rows[0].id);
+  } catch(e){setLoading(false);alert('Error: '+e.message);}
+}
+
+// ============================================================
+// PROPOSAL DETAIL PAGE
+// ============================================================
+function renderProposalDetail(propId) {
+  const el=document.getElementById('proposalDetailContent');
+  const p=db.proposals.find(pr=>pr.id===propId);
+  if(!p){el.innerHTML=`<p>Proposal not found.</p>`;return;}
+  const path   = getCatPath(p.categoryId);
+  const addons = db.proposals.filter(a=>a.parentId===p.id&&!a.archived);
+  const comments = db.comments.filter(c=>c.proposalId===p.id);
+  const parent   = p.parentId ? db.proposals.find(pp=>pp.id===p.parentId) : null;
+  const statusPill = p.status==='passed'?`<span class="pill pill-green">Passed</span>`:p.status==='failed'?`<span class="pill pill-red">Failed</span>`:'';
+  const voting   = isVotingActive();
+  const isAdmin  = currentUser && currentUser.isAdmin;
+
+  let html=`
+    <div class="flex items-center gap-2 mb-3"><button class="btn btn-ghost btn-sm" onclick="showPage('landing')">← Back</button></div>
+    <div class="cat-path">${path.map(c=>`<span class="cat-chip">${escHtml(c.name)}</span>`).join('')}</div>
+    ${parent?`<div class="text-sm text-dim mb-1">Add-on to: <a class="text-gold" href="javascript:void(0)" onclick="showPage('proposal','${parent.id}')">${escHtml(parent.title)}</a></div>`:''}
+    <div class="flex items-center gap-2" style="margin-bottom:.5rem">
+      <h2 style="font-size:1.7rem">${escHtml(p.title)}</h2>${statusPill}
+      ${p.parentId?`<span class="pill pill-gold">Add-on</span>`:''}
+      ${isAdmin?`<button class="btn btn-danger btn-sm" style="margin-left:auto" onclick="adminRemoveProposal('${p.id}')">Remove Proposal</button>`:''}
+    </div>
+    <div class="card-meta">by <strong>${escHtml(p.author)}</strong> · ${timeAgo(p.createdAt)}</div>
+    <div class="proposal-content">${escHtml(p.body)}</div>`;
+
+  if (!p.parentId) {
+    html+=`<div class="addon-section">
+      <div class="flex justify-between items-center mb-2">
+        <div class="section-title">Add-on Proposals (${addons.length})</div>
+        ${!voting&&currentUser?`<button class="btn btn-outline btn-sm" onclick="showAddonForm('${p.id}')">+ Add-on</button>`:''}
+      </div>
+      ${addons.length?addons.map(a=>`
+        <div class="addon-card">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+            <div style="font-weight:600;cursor:pointer" onclick="showPage('proposal','${a.id}')">${escHtml(a.title)}</div>
+            ${isAdmin?`<button class="btn btn-danger btn-sm" style="margin-left:8px;flex-shrink:0" onclick="adminRemoveProposal('${a.id}')">Remove</button>`:''}
+          </div>
+          <div style="font-size:.85rem;color:var(--text2);margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden" onclick="showPage('proposal','${a.id}')">${escHtml(a.body)}</div>
+          <div style="font-size:.78rem;color:var(--text3)" onclick="showPage('proposal','${a.id}')">by ${escHtml(a.author)} · ${timeAgo(a.createdAt)}</div>
+        </div>`).join(''):`<p class="text-dim text-sm">No add-on proposals yet.</p>`}
+      <div id="addonFormArea"></div>
+    </div>`;
+  }
+
+  html+=`<hr class="divider"><div class="comments-section">
+    <div class="section-title">Discussion (${comments.length})</div>
+    ${comments.length?comments.map(c=>`
+      <div class="comment" id="comment_${c.id}">
+        <div class="comment-author"><strong>${escHtml(c.author)}</strong> · ${timeAgo(c.createdAt)}
+          ${c.replyTo?`<span class="text-dim text-xs" style="margin-left:6px">↳ replying to <strong>${escHtml(c.replyTo)}</strong></span>`:''}
+        </div>
+        <div class="comment-body">${escHtml(c.body)}</div>
+        <div style="display:flex;gap:8px;margin-top:6px">
+          ${currentUser?`<button class="btn btn-ghost btn-sm" style="font-size:.78rem;padding:2px 8px" onclick="setReplyTo('${p.id}','${c.author}','${c.id}')">↩ Reply</button>`:''}
+          ${isAdmin?`<button class="btn btn-ghost btn-sm text-red" style="font-size:.78rem;padding:2px 8px" onclick="adminRemoveComment('${c.id}','${p.id}')">Remove</button>`:''}
+        </div>
+      </div>`).join(''):`<p class="text-dim text-sm" style="padding:1rem 0">No comments yet. Be the first!</p>`}
+    ${currentUser?`<div class="comment-input-area">
+      <div id="replyBanner_${p.id}" style="display:none;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:6px 12px;margin-bottom:8px;font-size:.82rem;color:var(--text2)">
+        <span id="replyBannerText"></span>
+        <button class="btn btn-ghost btn-sm" style="margin-left:8px;padding:1px 6px;font-size:.78rem" onclick="clearReplyTo('${p.id}')">✕</button>
+      </div>
+      <textarea id="commentBody" placeholder="Share your thoughts…" style="margin-bottom:8px"></textarea>
+      <button class="btn btn-outline btn-sm" onclick="submitComment('${p.id}')">Post Comment</button>
+    </div>`:`<p class="text-dim text-sm" style="margin-top:1rem"><a href="javascript:void(0)" onclick="showPage('auth')">Sign in</a> to comment.</p>`}
+  </div>`;
+  el.innerHTML=html;
+}
+
+function showAddonForm(parentId) {
+  const area=document.getElementById('addonFormArea'); if(!area)return;
+  area.innerHTML=`<div class="new-proposal-area" style="margin-top:1rem">
+    <div class="section-title mb-2">Write Add-on Proposal</div>
+    <div class="form-group"><label class="form-label">Title</label><input type="text" id="addonTitle"/></div>
+    <div class="form-group"><label class="form-label">Proposal</label><textarea id="addonBody"></textarea></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-gold" onclick="submitAddon('${parentId}')">Publish Add-on</button>
+      <button class="btn btn-outline" onclick="document.getElementById('addonFormArea').innerHTML=''">Cancel</button>
+    </div></div>`;
+}
+async function submitAddon(parentId) {
+  const title=document.getElementById('addonTitle').value.trim(), body=document.getElementById('addonBody').value.trim();
+  if(!title||!body){alert('Please fill in all fields.');return;}
+  const parent=db.proposals.find(p=>p.id===parentId);
+  setLoading(true);
+  try {
+    await sbPost('proposals',{title,body,category_id:parent.categoryId,parent_id:parentId,author:currentUser.username,author_id:currentUser.id,archived:false,status:null,session_number:null});
+    await showPage('proposal',parentId);
+  } catch(e){setLoading(false);alert('Error: '+e.message);}
+}
+
+let _replyTo={};
+function setReplyTo(propId,author,commentId) {
+  _replyTo[propId]={author,commentId};
+  const b=document.getElementById('replyBanner_'+propId); if(b){b.style.display='flex';b.style.alignItems='center';}
+  const t=document.getElementById('replyBannerText'); if(t) t.textContent='Replying to '+author;
+  const ta=document.getElementById('commentBody'); if(ta) ta.focus();
+}
+function clearReplyTo(propId) {
+  delete _replyTo[propId];
+  const b=document.getElementById('replyBanner_'+propId); if(b) b.style.display='none';
+}
+async function submitComment(propId) {
+  const body=document.getElementById('commentBody').value.trim(); if(!body)return;
+  const reply=_replyTo[propId];
+  setLoading(true);
+  try {
+    await sbPost('comments',{proposal_id:propId,author:currentUser.username,author_id:currentUser.id,body,reply_to:reply?reply.author:null,reply_to_comment_id:reply?reply.commentId:null});
+    delete _replyTo[propId];
+    await showPage('proposal',propId);
+  } catch(e){setLoading(false);alert('Error: '+e.message);}
+}
+async function adminRemoveProposal(propId) {
+  if(!currentUser||!currentUser.isAdmin)return;
+  if(!confirm('Remove this proposal? This cannot be undone.'))return;
+  setLoading(true);
+  try {
+    const addons=db.proposals.filter(p=>p.parentId===propId).map(p=>p.id);
+    for (const id of [propId,...addons]) await sbDelete('comments',`proposal_id=eq.${id}`).catch(()=>{});
+    if(addons.length) await sbDelete('proposals',`parent_id=eq.${propId}`).catch(()=>{});
+    await sbDelete('proposals',`id=eq.${propId}`);
+    await showPage('landing');
+  } catch(e){setLoading(false);alert('Error: '+e.message);}
+}
+async function adminRemoveComment(commentId,propId) {
+  if(!currentUser||!currentUser.isAdmin)return;
+  if(!confirm('Remove this comment?'))return;
+  setLoading(true);
+  try { await sbDelete('comments',`id=eq.${commentId}`); await showPage('proposal',propId); }
+  catch(e){setLoading(false);alert('Error: '+e.message);}
+}
+
+// ============================================================
+// VOTING PAGE
+// ============================================================
+let _voteSelections={}, _addonVoteSelections={};
+
+function renderVotePage() {
+  const el=document.getElementById('voteContent');
+  if (!isVotingActive()) { el.innerHTML=`<div class="card"><p class="text-muted">No active voting session.</p></div>`; return; }
+  const s=db.currentSession;
+  const myVote=db.votes.find(v=>v.userId===currentUser.id&&v.sessionId===s.id);
+  if(myVote){el.innerHTML=`<div class="card"><h3 style="font-family:'IBM Plex Sans';font-size:1rem;margin-bottom:8px">✓ You have already voted</h3><p class="text-muted text-sm">Your vote has been recorded for Session #${s.sessionNumber}.</p></div>`;return;}
+  const leafCatsWithProps=db.categories.filter(c=>isLeafCat(c.id)).filter(c=>db.proposals.some(p=>p.categoryId===c.id&&!p.parentId&&!p.archived)).sort((a,b)=>a.name.localeCompare(b.name));
+  if(!leafCatsWithProps.length){el.innerHTML=`<div class="card"><p class="text-muted">No proposals to vote on.</p></div>`;return;}
+
+  let html=`<p class="text-muted text-sm mb-3">For each category, vote for one proposal or "No to all".</p>`;
+  leafCatsWithProps.forEach(cat=>{
+    const props=db.proposals.filter(p=>p.categoryId===cat.id&&!p.parentId&&!p.archived), sel=_voteSelections[cat.id];
+    const pathDetails=getCatPath(cat.id).filter(c=>c.details&&c.details.trim()).map(c=>`<div class="cat-details-panel" style="margin:.75rem 1.25rem;margin-top:0"><div class="cat-details-label"><span>${escHtml(c.name)} — Guidance</span><button class="cat-details-toggle" onclick="toggleCatDetailsPanel(this)">Hide</button></div><div class="cat-details-text">${escHtml(c.details.trim())}</div></div>`).join('');
+    html+=`<div class="vote-category-block"><div class="vote-cat-header">${escHtml(catPathStr(cat.id))}</div>${pathDetails}
+      ${props.map(p=>`<div class="vote-option ${sel===p.id?'selected':''}" onclick="selectVoteOption('${cat.id}','${p.id}')"><div class="vote-radio"><div class="vote-radio-dot"></div></div><div class="vote-option-text"><div class="vote-option-title">${escHtml(p.title)}</div><div class="vote-option-body">${escHtml(p.body)}</div></div></div>`).join('')}
+      <div class="vote-option no-to-all ${sel==='none'?'selected':''}" onclick="selectVoteOption('${cat.id}','none')"><div class="vote-radio"><div class="vote-radio-dot"></div></div><div class="vote-option-text"><div class="vote-option-title no-to-all">No to all</div></div></div>
+    </div>`;
+    if(sel&&sel!=='none'){
+      const addons=db.proposals.filter(a=>a.parentId===sel&&!a.archived);
+      if(addons.length){
+        const addonSel=_addonVoteSelections[sel];
+        html+=`<div class="vote-category-block" style="margin-left:1.5rem;border-left:3px solid var(--gold-dim)"><div class="vote-cat-header" style="font-size:.78rem">Add-ons for: ${escHtml(db.proposals.find(p=>p.id===sel)?.title||'')}</div>
+          ${addons.map(a=>`<div class="vote-option ${addonSel===a.id?'selected':''}" onclick="selectAddonVote('${sel}','${a.id}')"><div class="vote-radio"><div class="vote-radio-dot"></div></div><div class="vote-option-text"><div class="vote-option-title">${escHtml(a.title)}</div><div class="vote-option-body">${escHtml(a.body)}</div></div></div>`).join('')}
+          <div class="vote-option no-to-all ${addonSel==='none'?'selected':''}" onclick="selectAddonVote('${sel}','none')"><div class="vote-radio"><div class="vote-radio-dot"></div></div><div class="vote-option-text"><div class="vote-option-title no-to-all">No to all</div></div></div>
+        </div>`;
+      }
+    }
+  });
+  html+=`<button class="btn btn-gold" style="margin-top:1rem;width:100%;justify-content:center" onclick="submitVote()">Submit Vote</button>`;
+  el.innerHTML=html;
+}
+function selectVoteOption(catId,propId){_voteSelections[catId]=propId; if(propId==='none')delete _addonVoteSelections[catId]; renderVotePage();}
+function selectAddonVote(parentId,addonId){_addonVoteSelections[parentId]=addonId; renderVotePage();}
+
+async function submitVote() {
+  const s=db.currentSession;
+  const leafCatsWithProps=db.categories.filter(c=>isLeafCat(c.id)).filter(c=>db.proposals.some(p=>p.categoryId===c.id&&!p.parentId&&!p.archived));
+  for(const cat of leafCatsWithProps){
+    if(!_voteSelections[cat.id]){alert(`Please vote in all categories. Missing: ${cat.name}`);return;}
+    if(_voteSelections[cat.id]!=='none'){
+      const addons=db.proposals.filter(a=>a.parentId===_voteSelections[cat.id]&&!a.archived);
+      if(addons.length&&!_addonVoteSelections[_voteSelections[cat.id]]){alert('Please vote on add-ons for the proposal you selected.');return;}
+    }
+  }
+  setLoading(true);
+  try {
+    await sbPost('votes',{user_id:currentUser.id,session_id:s.id,selections:_voteSelections,addon_selections:_addonVoteSelections});
+    _voteSelections={}; _addonVoteSelections={};
+    await refreshDB(); setLoading(false); renderVotePage();
+  } catch(e){setLoading(false);alert('Error submitting vote: '+e.message);}
+}
+
+// ============================================================
+// RESULTS
+// ============================================================
+function renderResults(sessionId) {
+  const s=db.sessions.find(ss=>ss.id===sessionId); if(!s)return`<p class="text-muted">No session data.</p>`;
+  const sessionVotes=db.votes.filter(v=>v.sessionId===sessionId), total=sessionVotes.length;
+  if(!total)return`<div class="card"><p class="text-muted">No votes were cast in this session.</p></div>`;
+  let html=`<div class="section-title">Results — Session #${s.sessionNumber} · ${total} vote${total!==1?'s':''}</div>`;
+  db.categories.filter(c=>isLeafCat(c.id)).forEach(cat=>{
+    const catVotes=sessionVotes.map(v=>v.selections[cat.id]).filter(Boolean); if(!catVotes.length)return;
+    const props=db.proposals.filter(p=>p.categoryId===cat.id&&!p.parentId);
+    const tally={}; catVotes.forEach(v=>{tally[v]=(tally[v]||0)+1;});
+    const entries=Object.entries(tally).sort((a,b)=>b[1]-a[1]), winnerId=entries[0]?.[0];
+    html+=`<div class="result-block"><div class="result-cat-header"><span class="text-sm text-muted">${escHtml(catPathStr(cat.id))}</span><span class="text-xs text-dim">${catVotes.length} votes</span></div>`;
+    entries.forEach(([optId,count])=>{
+      const pct=Math.round(count/catVotes.length*100), isW=(optId===winnerId);
+      const label=optId==='none'?'No to all':(props.find(p=>p.id===optId)?.title||optId);
+      html+=`<div class="result-row"><div style="flex:1;min-width:0"><div class="text-sm ${optId==='none'?'text-dim':'bold'}" style="margin-bottom:4px">${escHtml(label)}</div><div class="result-bar-wrap"><div class="result-bar ${isW?'winner':'loser'}" style="width:${pct}%"></div></div></div><div class="result-pct">${pct}%</div>${isW?`<span class="winner-badge">Winner</span>`:''}</div>`;
+    });
+    if(winnerId&&winnerId!=='none'){
+      const addons=db.proposals.filter(a=>a.parentId===winnerId);
+      if(addons.length){
+        const addonVotes=sessionVotes.map(v=>(v.addonSelections||{})[winnerId]).filter(Boolean);
+        if(addonVotes.length){
+          const at={}; addonVotes.forEach(v=>{at[v]=(at[v]||0)+1;});
+          const ae=Object.entries(at).sort((a,b)=>b[1]-a[1]), aw=ae[0]?.[0];
+          html+=`<div style="background:var(--bg3);border-top:1px solid var(--border);padding:.75rem 1.25rem"><div class="text-xs text-dim" style="margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em">Add-on vote results</div>`;
+          ae.forEach(([optId,count])=>{
+            const pct=Math.round(count/addonVotes.length*100), isW=(optId===aw);
+            const label=optId==='none'?'No to all':(addons.find(a=>a.id===optId)?.title||optId);
+            html+=`<div class="result-row" style="padding:6px 0"><div style="flex:1;min-width:0"><div class="text-sm ${optId==='none'?'text-dim':'bold'}">${escHtml(label)}</div></div><div class="result-pct">${pct}%</div>${isW?`<span class="winner-badge">Winner</span>`:''}</div>`;
+          });
+          html+=`</div>`;
+        }
+      }
+    }
+    html+=`</div>`;
+  });
+  return html;
+}
+
+// ============================================================
+// ADMIN
+// ============================================================
+function switchAdminTab(tab) {
+  currentAdminTab=tab;
+  document.querySelectorAll('#pageAdmin .tab').forEach((t,i)=>t.classList.toggle('active',['categories','voting','users'][i]===tab));
+  renderAdmin();
+}
+function renderAdmin() {
+  const el=document.getElementById('adminContent');
+  if(currentAdminTab==='categories') el.innerHTML=renderAdminCategories();
+  else if(currentAdminTab==='voting')    el.innerHTML=renderAdminVoting();
+  else if(currentAdminTab==='users')     el.innerHTML=renderAdminUsers();
+}
+function renderAdminCategories() {
+  function tree(pid, depth) {
+    return db.categories.filter(c=>c.parentId===(pid||null)).map(c=>{
+      const hasD=c.details&&c.details.trim();
+      return `<div class="tree-item">
+        <span class="tree-indent">${depth>0?'└':''}</span>
+        <span class="tree-name" style="margin-left:${depth*12}px">${escHtml(c.name)}${isLeafCat(c.id)?` <span class="pill pill-gold" style="font-size:.65rem">leaf</span>`:''}${hasD?` <span class="pill pill-blue" style="font-size:.65rem">details</span>`:''}</span>
+        <span class="tree-actions">
+          <button class="btn btn-outline btn-sm" onclick="editCatDetails('${c.id}')">📋 Details</button>
+          <button class="btn btn-outline btn-sm" onclick="addChildCat('${c.id}')">+ Sub</button>
+          <button class="btn btn-ghost btn-sm text-red" onclick="deleteCat('${c.id}')">✕</button>
+        </span>
+      </div>${tree(c.id,depth+1)}`;
+    }).join('');
+  }
+  return `<div class="admin-section"><h3>Category Tree</h3>
+    <p class="text-muted text-sm" style="margin-bottom:1rem">Use <strong>📋 Details</strong> to add guidance shown to users when selecting that category.</p>
+    <div class="card" style="padding:.5rem 1rem">${tree(null,0)}</div>
+    <button class="btn btn-outline btn-sm" style="margin-top:1rem" onclick="addRootCat()">+ Add Root Category</button>
+  </div>`;
+}
+function addRootCat() {
+  showModal('New Root Category',`<div class="form-group"><label class="form-label">Name</label><input type="text" id="mCatName"/></div>`,
+    [{label:'Create',cls:'btn-gold',action:async()=>{
+      const name=document.getElementById('mCatName').value.trim(); if(!name)return;
+      closeModal(); setLoading(true);
+      try{await sbPost('categories',{name,parent_id:null,details:''});await refreshDB();setLoading(false);renderAdmin();}
+      catch(e){setLoading(false);alert('Error: '+e.message);}
+    }}]);
+}
+function addChildCat(parentId) {
+  const parent=db.categories.find(c=>c.id===parentId);
+  showModal(`New Sub-category of "${parent.name}"`,`<div class="form-group"><label class="form-label">Name</label><input type="text" id="mCatName"/></div>`,
+    [{label:'Create',cls:'btn-gold',action:async()=>{
+      const name=document.getElementById('mCatName').value.trim(); if(!name)return;
+      closeModal(); setLoading(true);
+      try{await sbPost('categories',{name,parent_id:parentId,details:''});await refreshDB();setLoading(false);renderAdmin();}
+      catch(e){setLoading(false);alert('Error: '+e.message);}
+    }}]);
+}
+function editCatDetails(catId) {
+  const cat=db.categories.find(c=>c.id===catId); if(!cat)return;
+  showModal(`Details for: ${cat.name}`,`
+    <p class="text-muted text-sm" style="margin-bottom:.75rem">Path: <em>${escHtml(catPathStr(catId))}</em></p>
+    <div class="form-group"><label class="form-label">Details / Guidance</label>
+      <textarea id="mCatDetails" style="min-height:200px;font-size:.88rem" placeholder="Write guidance for this category…">${escHtml(cat.details||'')}</textarea>
+      <div class="form-hint">Supports line breaks. Leave empty to remove details.</div>
+    </div>`,
+    [{label:'Save Details',cls:'btn-gold',action:async()=>{
+      const details=document.getElementById('mCatDetails').value.trim();
+      closeModal(); setLoading(true);
+      try{await sbPatch('categories',`id=eq.${catId}`,{details});await refreshDB();setLoading(false);renderAdmin();}
+      catch(e){setLoading(false);alert('Error: '+e.message);}
+    }}]);
+}
+async function deleteCat(catId) {
+  if(db.categories.some(c=>c.parentId===catId)||db.proposals.some(p=>p.categoryId===catId)){alert('Cannot delete: category has sub-categories or proposals.');return;}
+  if(!confirm('Delete this category?'))return;
+  setLoading(true);
+  try{await sbDelete('categories',`id=eq.${catId}`);await refreshDB();setLoading(false);renderAdmin();}
+  catch(e){setLoading(false);alert('Error: '+e.message);}
+}
+
+function renderAdminVoting() {
+  const s=db.currentSession, sv=s?db.votes.filter(v=>v.sessionId===s.id).length:0;
+  let html=`<div class="admin-section"><h3>Voting Session</h3>`;
+  if(s&&s.votingActive&&Date.now()<s.endTime){
+    html+=`<div class="card mb-2"><div class="text-sm mb-1"><span class="pill pill-red">LIVE</span> Session #${s.sessionNumber}</div><div class="text-muted text-sm">Ends: ${new Date(s.endTime).toLocaleString()}</div><div class="text-muted text-sm">Votes cast: ${sv}</div></div>
+    <button class="btn btn-danger btn-sm" onclick="endVotingNow()">End Voting Now</button>`;
+  } else {
+    html+=`<p class="text-muted text-sm mb-2">No active session.</p><button class="btn btn-gold btn-sm" onclick="startNewVoting()">Start Voting Session</button>`;
+  }
+  html+=`</div>`;
+  if(db.sessions.length){
+    html+=`<div class="admin-section"><h3>Past Sessions</h3>`;
+    db.sessions.slice().reverse().forEach(ss=>{
+      const vc=db.votes.filter(v=>v.sessionId===ss.id).length;
+      html+=`<div class="card mb-1" style="padding:.75rem 1rem"><div class="flex justify-between items-center"><div><span class="mono text-sm">Session #${ss.sessionNumber}</span> <span class="text-dim text-xs">· ${vc} votes</span></div><button class="btn btn-ghost btn-sm" onclick="viewSessionResults('${ss.id}')">View Results</button></div></div>`;
+    });
+    html+=`</div>`;
+  }
+  return html;
+}
+function startNewVoting() {
+  showModal('Start Voting Session',`
+    <p class="text-muted text-sm mb-3">This will disable new proposals and allow users to vote.</p>
+    <div class="form-group"><label class="form-label">Duration</label>
+      <select id="mDuration">
+        <option value="300000">5 minutes (test)</option>
+        <option value="3600000">1 hour</option>
+        <option value="86400000">24 hours</option>
+        <option value="259200000">3 days</option>
+        <option value="604800000">1 week</option>
+      </select>
+    </div>`,
+    [{label:'Start Voting',cls:'btn-gold',action:async()=>{
+      const dur=parseInt(document.getElementById('mDuration').value);
+      closeModal(); setLoading(true);
+      try {
+        const maxSn=db.sessions.reduce((m,s)=>Math.max(m,s.sessionNumber),0);
+        const sn=maxSn+1, now=Date.now();
+        const rows=await sbPost('sessions',{session_number:sn,start_time:new Date(now).toISOString(),end_time:new Date(now+dur).toISOString(),voting_active:true,archived:false});
+        const ns=rows[0];
+        const csObj={id:ns.id,sessionNumber:sn,startTime:now,endTime:now+dur,votingActive:true,archived:false};
+        await sbUpsert('settings',{key:'current_session',value:csObj});
+        await refreshDB(); setLoading(false); renderAdmin(); renderNav(); renderHero(); renderVoteBanner();
+      } catch(e){setLoading(false);alert('Error: '+e.message);}
+    }}]);
+}
+async function endVotingNow() {
+  if(!confirm('End voting session now? Results will be tallied automatically.'))return;
+  await finalizeSession();
+}
+async function finalizeSession() {
+  const s=db.currentSession; if(!s||!s.votingActive)return;
+  const sessionVotes=db.votes.filter(v=>v.sessionId===s.id);
+  const winners={}, addonWinners={};
+  db.categories.filter(c=>isLeafCat(c.id)).forEach(cat=>{
+    const props=db.proposals.filter(p=>p.categoryId===cat.id&&!p.parentId&&!p.archived); if(!props.length)return;
+    const tally={}; sessionVotes.forEach(v=>{const sel=v.selections[cat.id];if(sel)tally[sel]=(tally[sel]||0)+1;});
+    if(!Object.keys(tally).length)return;
+    const top=Object.entries(tally).sort((a,b)=>b[1]-a[1])[0][0];
+    if(top!=='none'){
+      winners[top]=true;
+      const addons=db.proposals.filter(a=>a.parentId===top&&!a.archived);
+      if(addons.length){
+        const at={}; sessionVotes.forEach(v=>{const sel=(v.addonSelections||{})[top];if(sel)at[sel]=(at[sel]||0)+1;});
+        const atop=Object.entries(at).sort((a,b)=>b[1]-a[1])[0]?.[0];
+        if(atop&&atop!=='none')addonWinners[atop]=true;
+      }
+    }
+  });
+  setLoading(true);
+  try {
+    for(const p of db.proposals.filter(p=>!p.archived&&!p.status)){
+      const status=p.parentId?(addonWinners[p.id]?'passed':'failed'):(winners[p.id]?'passed':'failed');
+      await sbPatch('proposals',`id=eq.${p.id}`,{archived:true,status,session_number:s.sessionNumber});
+    }
+    await sbPatch('sessions',`id=eq.${s.id}`,{voting_active:false,archived:true});
+    await sbUpsert('settings',{key:'current_session',value:null});
+    await refreshDB(); setLoading(false);
+    renderAdmin(); renderNav(); renderHero(); renderVoteBanner(); renderFeed();
+  } catch(e){setLoading(false);alert('Error finalizing: '+e.message);}
+}
+function viewSessionResults(sessionId){showModal('Session Results',renderResults(sessionId),[]);}
+
+function renderAdminUsers() {
+  return `<div class="admin-section"><h3>User Accounts</h3>
+    ${db.users.map(u=>`<div class="tree-item">
+      <span class="tree-name">${escHtml(u.username)} ${u.isAdmin?'<span class="badge-admin">Admin</span>':''}</span>
+      <span class="tree-actions">
+        ${!u.isAdmin?`<button class="btn btn-outline btn-sm" onclick="toggleAdmin('${u.id}',true)">Make Admin</button>`:(u.username!=='admin'?`<button class="btn btn-ghost btn-sm" onclick="toggleAdmin('${u.id}',false)">Remove Admin</button>`:'<span class="text-dim text-xs">owner</span>')}
+        ${u.username!=='admin'?`<button class="btn btn-ghost btn-sm text-red" onclick="deleteUser('${u.id}')">✕</button>`:''}
+      </span>
+    </div>`).join('')}
+    <button class="btn btn-outline btn-sm" style="margin-top:1rem" onclick="addUser()">+ Add User</button>
+  </div>`;
+}
+async function toggleAdmin(uid,makeAdmin) {
+  setLoading(true);
+  try{await sbPatch('users',`id=eq.${uid}`,{is_admin:makeAdmin});await refreshDB();setLoading(false);renderAdmin();}
+  catch(e){setLoading(false);alert('Error: '+e.message);}
+}
+async function deleteUser(uid) {
+  if(!confirm('Delete this user?'))return;
+  setLoading(true);
+  try{await sbDelete('users',`id=eq.${uid}`);await refreshDB();setLoading(false);renderAdmin();}
+  catch(e){setLoading(false);alert('Error: '+e.message);}
+}
+function addUser() {
+  showModal('Add User',`
+    <div class="form-group"><label class="form-label">Username</label><input type="text" id="mUser"/></div>
+    <div class="form-group"><label class="form-label">Password</label><input type="password" id="mPass"/></div>`,
+    [{label:'Create User',cls:'btn-gold',action:async()=>{
+      const username=document.getElementById('mUser').value.trim(), password=document.getElementById('mPass').value;
+      if(!username||!password)return;
+      if(db.users.find(u=>u.username===username)){alert('Username taken.');return;}
+      closeModal(); setLoading(true);
+      try{await sbPost('users',{username,password,is_admin:false});await refreshDB();setLoading(false);renderAdmin();}
+      catch(e){setLoading(false);alert('Error: '+e.message);}
+    }}]);
+}
+
+// ============================================================
+// AUTH PAGE
+// ============================================================
+function renderAuth(data) {
+  const isR=data&&data.register, el=document.getElementById('authContent');
+  el.innerHTML=`
+    <h2>${isR?'Create Account':'Welcome Back'}</h2>
+    <p>${isR?'Join the community to propose and discuss changes.':'Sign in to your account.'}</p>
+    <div class="form-group"><label class="form-label">Username</label><input type="text" id="authUser" onkeydown="if(event.key==='Enter')${isR?'doRegister':'doLogin'}()"/></div>
+    <div class="form-group"><label class="form-label">Password</label><input type="password" id="authPass" onkeydown="if(event.key==='Enter')${isR?'doRegister':'doLogin'}()"/></div>
+    ${isR?`<div class="form-group"><label class="form-label">Confirm Password</label><input type="password" id="authPass2" onkeydown="if(event.key==='Enter')doRegister()"/></div>`:''}
+    <div id="authErr" class="form-error" style="margin-bottom:.75rem"></div>
+    <button class="btn btn-gold" style="width:100%;justify-content:center" onclick="${isR?'doRegister()':'doLogin()'}">
+      ${isR?'Create Account':'Sign In'}
+    </button>
+    <div style="margin-top:1rem;text-align:center;font-size:.85rem;color:var(--text2)">
+      ${isR?'Already have an account? ':"Don't have an account? "}
+      <a href="javascript:void(0)" onclick="showPage('auth',{register:${!isR}})">${isR?'Sign in':'Register'}</a>
+    </div>`;
+}
+async function doLogin() {
+  const u=document.getElementById('authUser').value.trim(), p=document.getElementById('authPass').value;
+  const errEl=document.getElementById('authErr');
+  errEl.textContent='';
+  if(!u||!p){errEl.textContent='Please enter your username and password.';return;}
+  setLoading(true);
+  try {
+    const ok = await login(u, p);
+    setLoading(false);
+    if(!ok){errEl.textContent='Invalid username or password.';return;}
+    showPage('landing');
+  } catch(e) {
+    setLoading(false);
+    errEl.style.whiteSpace='pre-wrap';
+    errEl.textContent = e.message;
+  }
+}
+async function doRegister() {
+  const u=document.getElementById('authUser').value.trim(), p=document.getElementById('authPass').value, p2=document.getElementById('authPass2').value;
+  const errEl=document.getElementById('authErr');
+  if(!u){errEl.textContent='Username required.';return;}
+  if(p.length<4){errEl.textContent='Password must be at least 4 characters.';return;}
+  if(p!==p2){errEl.textContent='Passwords do not match.';return;}
+  setLoading(true);
+  try {
+    const ex=await sbGet('users',`username=eq.${encodeURIComponent(u)}&select=id`);
+    if(ex&&ex.length){setLoading(false);errEl.textContent='Username already taken.';return;}
+    await sbPost('users',{username:u,password:p,is_admin:false});
+    await login(u,p); setLoading(false); showPage('landing');
+  } catch(e){setLoading(false);errEl.style.whiteSpace='pre-wrap';errEl.textContent='Error: '+e.message;}
+}
+
+// ============================================================
+// MODAL
+// ============================================================
+function showModal(title,bodyHtml,buttons) {
+  document.getElementById('modalTitle').textContent=title;
+  document.getElementById('modalBody').innerHTML=bodyHtml;
+  const footer=document.getElementById('modalFooter');
+  footer.innerHTML=`<button class="btn btn-outline" onclick="closeModal()">Cancel</button>`;
+  (buttons||[]).forEach(b=>{const btn=document.createElement('button');btn.className=`btn ${b.cls}`;btn.textContent=b.label;btn.onclick=b.action;footer.appendChild(btn);});
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('open');}
+document.getElementById('modalOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('modalOverlay'))closeModal();});
+
+// ============================================================
+// CATALOGUE PAGE
+// ============================================================
+function renderCatalogue() {
+  const el=document.getElementById('catalogueContent'); if(!el)return;
+  const roots=getChildren(null);
+  if(!roots.length){el.innerHTML=`<div class="empty-state"><h3>No categories yet</h3></div>`;return;}
+  function node(cat,depth){
+    const ch=getChildren(cat.id), isLeaf=ch.length===0, hasD=cat.details&&cat.details.trim(), nid='catnode_'+cat.id;
+    if(depth===0)return`<div class="cat-group-root">
+      <div class="cat-group-root-header" onclick="toggleCatNode('${nid}')">
+        <div class="cat-group-root-name"><span class="cat-chevron open" id="${nid}_chevron">▶</span>${escHtml(cat.name)}${isLeaf?` <span class="pill pill-gold" style="font-size:.65rem">leaf</span>`:''}${hasD?` <span class="pill pill-blue" style="font-size:.65rem">has details</span>`:''}</div>
+        <span class="text-dim text-xs">${ch.length} sub-categor${ch.length===1?'y':'ies'}</span>
+      </div>
+      ${hasD?`<div class="cat-root-details">${escHtml(cat.details.trim())}</div>`:''}
+      <div id="${nid}">${ch.map(c=>node(c,1)).join('')}</div>
+    </div>`;
+    if(depth===1)return`<div class="cat-child-item">
+      <div class="cat-child-name">${escHtml(cat.name)}${isLeaf?` <span class="pill pill-gold" style="font-size:.62rem">leaf</span>`:''}</div>
+      ${hasD?`<div class="cat-child-details">${escHtml(cat.details.trim())}</div>`:''}
+      ${getChildren(cat.id).map(c=>node(c,2)).join('')}
+    </div>`;
+    return`<div class="cat-grandchild-item">
+      <div class="cat-child-name" style="font-size:.85rem"><span style="color:var(--text3)">└</span> ${escHtml(cat.name)}${isLeaf?` <span class="pill pill-gold" style="font-size:.6rem">leaf</span>`:''}</div>
+      ${hasD?`<div class="cat-child-details" style="padding-left:1rem;font-size:.83rem">${escHtml(cat.details.trim())}</div>`:''}
+      ${getChildren(cat.id).map(c=>node(c,depth+1)).join('')}
+    </div>`;
+  }
+  el.innerHTML=`<div class="catalogue-tree">${roots.map(r=>node(r,0)).join('')}</div>`;
+}
+function toggleCatNode(nid){
+  const el=document.getElementById(nid), ch=document.getElementById(nid+'_chevron'); if(!el)return;
+  const hidden=el.style.display==='none'; el.style.display=hidden?'':'none';
+  if(ch)ch.classList.toggle('open',hidden);
+}
+
+// ============================================================
+// HOW TO USE PAGE
+// ============================================================
+function renderHowTo(){
+  const el=document.getElementById('howToContent'); if(!el)return;
+  el.innerHTML=`
+    <div class="howto-intro">
+      <p><strong style="color:var(--text)">Vox Populi</strong> is a structured platform for proposing, discussing, and voting on changes. Everything happens in sessions — proposals accumulate between sessions, then the community votes together.</p>
+      <p>You don't need to be an expert to participate. If you have a strong opinion or a clever idea, this is the place to put it on the record.</p>
+    </div>
+    <div class="howto-section"><h3>📝 Making a Proposal</h3>
+      <div class="howto-step"><div class="howto-step-num">1</div><div class="howto-step-content"><div class="howto-step-title">Sign in or Register</div><div class="howto-step-body">You need an account to submit proposals or vote. Registration is instant — just pick a username and password.</div></div></div>
+      <div class="howto-step"><div class="howto-step-num">2</div><div class="howto-step-content"><div class="howto-step-title">Click "New Proposal"</div><div class="howto-step-body">From the main page, click the gold "New Proposal" button. This is only available when there is no active voting session.</div></div></div>
+      <div class="howto-step"><div class="howto-step-num">3</div><div class="howto-step-content"><div class="howto-step-title">Select a Category</div><div class="howto-step-body">Navigate the category tree from broad to specific. When you select a category, any admin-written guidance will appear below it — read it to make sure you're placing your proposal correctly. You can collapse the guidance if you need more space.</div></div></div>
+      <div class="howto-step"><div class="howto-step-num">4</div><div class="howto-step-content"><div class="howto-step-title">Write your Proposal</div><div class="howto-step-body">Give it a clear, descriptive title and write your full proposal in the body. Be specific — vague proposals are harder to vote on. Once you're happy, hit <strong>Publish</strong>.</div></div></div>
+      <div class="howto-tip"><strong>Tip:</strong> Check if someone already proposed something similar. If so, you can write an <strong>Add-on Proposal</strong> to theirs instead, refining or extending it.</div>
+    </div>
+    <div class="howto-section"><h3>🔗 Add-on Proposals</h3>
+      <div class="howto-step"><div class="howto-step-num">1</div><div class="howto-step-content"><div class="howto-step-title">Find an existing proposal</div><div class="howto-step-body">When you select a leaf category, any existing proposals are listed. Click one to select it as the parent.</div></div></div>
+      <div class="howto-step"><div class="howto-step-num">2</div><div class="howto-step-content"><div class="howto-step-title">Write your Add-on</div><div class="howto-step-body">An add-on modifies or extends a main proposal. During voting, if voters choose the parent proposal, they also get to vote on its add-ons.</div></div></div>
+      <div class="howto-tip"><strong>Note:</strong> Add-ons only go into voting if their parent proposal wins.</div>
+    </div>
+    <div class="howto-section"><h3>💬 Discussion</h3>
+      <div class="howto-step"><div class="howto-step-num">1</div><div class="howto-step-content"><div class="howto-step-title">Open any Proposal</div><div class="howto-step-body">Click any proposal card to open the full detail view and read the existing discussion.</div></div></div>
+      <div class="howto-step"><div class="howto-step-num">2</div><div class="howto-step-content"><div class="howto-step-title">Post a Comment or Reply</div><div class="howto-step-body">Use the discussion box at the bottom to share your thoughts. Hit <strong>↩ Reply</strong> on any comment to reply directly to that person.</div></div></div>
+    </div>
+    <div class="howto-section"><h3>🗳️ Voting</h3>
+      <div class="howto-step"><div class="howto-step-num">1</div><div class="howto-step-content"><div class="howto-step-title">Wait for a Voting Session</div><div class="howto-step-body">When a session is live, a red banner appears at the top with a countdown timer.</div></div></div>
+      <div class="howto-step"><div class="howto-step-num">2</div><div class="howto-step-content"><div class="howto-step-title">Cast Your Vote</div><div class="howto-step-body">For each category that has proposals, pick the one you support — or choose "No to all". If you pick a proposal that has add-ons, you'll also vote on those.</div></div></div>
+      <div class="howto-step"><div class="howto-step-num">3</div><div class="howto-step-content"><div class="howto-step-title">Results are automatic</div><div class="howto-step-body">When the session ends, votes are tallied automatically. Winners move to the <strong>Passed</strong> tab; the rest to <strong>Failed</strong>. Full results are in the <strong>Past Sessions</strong> tab.</div></div></div>
+    </div>
+    <div class="howto-section"><h3>📚 Category Catalogue</h3>
+      <div class="howto-step"><div class="howto-step-num">1</div><div class="howto-step-content"><div class="howto-step-title">Browse all categories</div><div class="howto-step-body">The <strong>Catalogue</strong> in the top bar shows every category and sub-category with any admin-written guidance. Use it to understand where your ideas belong before writing a proposal.</div></div></div>
+    </div>`;
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function escHtml(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function timeAgo(ts){const d=Date.now()-ts;if(d<60000)return'just now';if(d<3600000)return Math.floor(d/60000)+'m ago';if(d<86400000)return Math.floor(d/3600000)+'h ago';return Math.floor(d/86400000)+'d ago';}
+
+async function testConnection() {
+  const el = document.getElementById('connTestResult');
+  if (!el) return;
+  el.style.color = 'var(--text2)';
+  el.textContent = 'Testing…';
+  try {
+    await sbGet('users', 'select=id&limit=1');
+    el.style.color = 'var(--green)';
+    el.textContent = '✓ Connected successfully! Tables found.';
+  } catch(e) {
+    el.style.color = 'var(--red)';
+    if (e.message.includes('Table not found') || e.message.includes('404')) {
+      el.textContent = '✗ Connected but tables missing — run the setup SQL first.';
+    } else if (e.message.includes('Permission denied')) {
+      el.textContent = '✗ Connected but RLS is blocking access — disable Row Level Security on all tables.';
+    } else if (e.message.includes('Cannot reach')) {
+      el.textContent = '✗ Cannot reach Supabase — check URL/key or resume the project at supabase.com.';
+    } else {
+      el.textContent = '✗ ' + e.message.split('\n')[0];
+    }
+  }
+}
+
+// ============================================================
+// INIT
+// ============================================================
+(async()=>{
+  setLoading(true);
+  if(_cfg()){
+    await tryRestoreSession().catch(()=>{});
+    await refreshDB().catch(e=>console.error('Initial load:',e));
+  }
+  setLoading(false);
+  renderNav(); renderHero(); renderFeed(); renderVoteBanner();
+})();
+</script>
+</body>
+</html>
