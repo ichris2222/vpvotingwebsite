@@ -894,14 +894,14 @@ function renderLeafProposalArea() {
   let html='';
   if (existing.length) {
     html+=`<div class="mb-2"><div class="section-title">Existing Proposals in this Category</div><div class="scrollable">
-      ${existing.map(p=>`<div class="proposal-in-cat ${_selectedExistingProposal===p.id?'selected-prop':''}" onclick="selectExistingProposal('${p.id}')"><div style="font-weight:500;font-size:.9rem">${escHtml(p.title)}</div><div style="font-size:.8rem;color:var(--text3)">by ${escHtml(p.author)} · ${timeAgo(p.createdAt)}</div></div>`).join('')}
+      ${existing.map(p=>`<div class="proposal-in-cat ${_selectedExistingProposal===p.id?'selected-prop':''}" onclick="selectExistingProposal('${p.id}')"><div style="font-weight:500;font-size:.9rem">${escHtml(p.title)}</div><div style="font-size:.8rem;color:var(--text3)">by ${escHtml(p.author)} · ${timeAgo(p.createdAt)}</div><a href="#proposal/${p.id}" target="_blank" onclick="event.stopPropagation()" style="font-size:.78rem;color:var(--accent2)">Open ↗</a></div>`).join('')}
     </div></div>`;
   }
   if (_selectedExistingProposal) {
     const parent=db.proposals.find(p=>p.id===_selectedExistingProposal);
     const addons=db.proposals.filter(p=>p.parentId===_selectedExistingProposal&&!p.archived);
     html+=`<div class="new-proposal-area"><div style="margin-bottom:1rem;padding-bottom:.75rem;border-bottom:1px solid var(--border)"><div class="text-sm text-muted mb-1">Writing an <span style="color:var(--gold)">Add-on Proposal</span> to:</div><div style="font-weight:600">${escHtml(parent.title)}</div></div>`;
-    if(addons.length) html+=`<div class="mb-2"><div class="section-title">Existing Add-ons</div>${addons.map(a=>`<div class="proposal-in-cat"><div style="font-size:.88rem;font-weight:500">${escHtml(a.title)}</div></div>`).join('')}</div>`;
+    if(addons.length) html+=`<div class="mb-2"><div class="section-title">Existing Add-ons</div>${addons.map(a=>`<div class="proposal-in-cat"><div style="font-size:.88rem;font-weight:500">${escHtml(a.title)}</div><div style="font-size:.8rem;color:var(--text3)">by ${escHtml(a.author)} · ${timeAgo(a.createdAt)}</div><a href="#proposal/${a.id}" target="_blank" style="font-size:.78rem;color:var(--accent2)">Open ↗</a></div>`).join('')}</div>`;
     html+=renderWriteForm(true)+`</div>`;
   } else {
     html+=`<div class="new-proposal-area"><div class="section-title" style="margin-bottom:.75rem">Write New Proposal</div>${renderWriteForm(false)}</div>`;
