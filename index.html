@@ -229,6 +229,7 @@
   .pill-blue { background: rgba(90,143,212,0.15); color: var(--accent2); border: 1px solid #3a5a90; }
   .pill-red { background: rgba(212,90,90,0.15); color: var(--red); border: 1px solid #7a3030; }
   .pill-green { background: rgba(90,212,122,0.15); color: var(--green); border: 1px solid #307a50; }
+  .pill-warn { background: rgba(201,137,60,0.15); color: var(--warn); border: 1px solid #7a5020; }
   hr.gold { border-color: var(--gold-dim); opacity: 0.4; }
 
   .proposal-in-cat { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 8px; cursor: pointer; transition: all 0.12s; }
@@ -300,6 +301,7 @@
     <div class="tabs">
       <button class="tab active" onclick="switchFeedTab('all')">All Proposals</button>
       <button class="tab" onclick="switchFeedTab('addons')">Add-on Proposals</button>
+      <button class="tab" onclick="switchFeedTab('wildcards')">✦ Wildcards</button>
       <button class="tab" onclick="switchFeedTab('passed')">Passed</button>
       <button class="tab" onclick="switchFeedTab('failed')">Failed</button>
       <button class="tab" onclick="switchFeedTab('sessions')">Past Sessions</button>
@@ -339,6 +341,7 @@
     <div class="tabs">
       <button class="tab active" onclick="switchAdminTab('categories')">Categories</button>
       <button class="tab" onclick="switchAdminTab('voting')">Voting</button>
+      <button class="tab" onclick="switchAdminTab('wildcards')">✦ Wildcards</button>
       <button class="tab" onclick="switchAdminTab('users')">Users</button>
     </div>
     <div id="adminContent"></div>
@@ -363,10 +366,27 @@
   <div style="max-width: 860px;">
     <div class="flex items-center gap-2 mb-3">
       <button class="btn btn-ghost btn-sm" onclick="showPage('landing')">← Back</button>
-      <h2 style="font-size:1.8rem;">Category Catalogue</h2>
+      <h2 style="font-size:1.8rem;">Civilopedia</h2>
     </div>
     <p class="text-muted" style="margin-bottom:1.5rem;font-size:0.92rem;">Browse all categories and sub-categories. Each entry may include notes from the admins on what belongs there.</p>
     <div id="catalogueContent"></div>
+  </div>
+</div>
+
+<div id="pageWildcard" class="page">
+  <div style="max-width: 800px;">
+    <div class="flex items-center gap-2 mb-3">
+      <button class="btn btn-ghost btn-sm" onclick="showPage('landing')">← Back</button>
+      <h2 style="font-size:1.6rem;">✦ Wildcard Proposal</h2>
+    </div>
+    <div class="card" style="border-color:var(--gold-dim);margin-bottom:1.5rem">
+      <p class="text-muted text-sm" style="line-height:1.75">
+        <strong style="color:var(--gold)">Wildcard Proposals</strong> are for ideas that don't fit any existing category.
+        After submission they enter a <em>pending review</em> queue. An admin must approve them before they're included in a voting session.
+        Once approved, they'll appear alongside regular proposals when voting opens.
+      </p>
+    </div>
+    <div id="wildcardContent"></div>
   </div>
 </div>
 
@@ -442,7 +462,7 @@ const sbUpsert = (t, d)     => _req(t,                      'POST',  d,   {prefe
 // ============================================================
 // IN-MEMORY CACHE  (rebuilt on every page visit)
 // ============================================================
-let db = { users:[], categories:[], proposals:[], comments:[], votes:[], sessions:[], currentSession:null };
+let db = { users:[], categories:[], proposals:[], comments:[], votes:[], sessions:[], currentSession:null, proposalsOpen:true };
 let currentUser   = null;
 let currentFeedTab  = 'all';
 let currentAdminTab = 'categories';
@@ -460,12 +480,14 @@ async function refreshDB() {
   ]);
   db.users      = (users||[]).map(u=>({id:u.id, username:u.username, isAdmin:u.is_admin, createdAt:+new Date(u.created_at)}));
   db.categories = (cats||[]).map(c=>({id:c.id, name:c.name, parentId:c.parent_id||null, details:c.details||'', createdAt:+new Date(c.created_at)}));
-  db.proposals  = (props||[]).map(p=>({id:p.id, title:p.title, body:p.body, categoryId:p.category_id, parentId:p.parent_id||null, author:p.author, authorId:p.author_id, createdAt:+new Date(p.created_at), archived:p.archived, status:p.status, sessionNumber:p.session_number}));
+  db.proposals  = (props||[]).map(p=>({id:p.id, title:p.title, body:p.body, categoryId:p.category_id, parentId:p.parent_id||null, author:p.author, authorId:p.author_id, createdAt:+new Date(p.created_at), archived:p.archived, status:p.status, sessionNumber:p.session_number, isWildcard:p.is_wildcard||false, wildcardStatus:p.wildcard_status||null, wildcardParentId:p.wildcard_parent_id||null}));
   db.comments   = (cmts||[]).map(c=>({id:c.id, proposalId:c.proposal_id, author:c.author, authorId:c.author_id, body:c.body, replyTo:c.reply_to||null, replyToCommentId:c.reply_to_comment_id||null, createdAt:+new Date(c.created_at)}));
   db.votes      = (votes||[]).map(v=>({id:v.id, userId:v.user_id, sessionId:v.session_id, selections:v.selections||{}, addonSelections:v.addon_selections||{}, createdAt:+new Date(v.created_at)}));
   db.sessions   = (sessions||[]).map(s=>({id:s.id, sessionNumber:s.session_number, startTime:+new Date(s.start_time), endTime:+new Date(s.end_time), votingActive:s.voting_active, archived:s.archived}));
   const cs = (settings||[]).find(s=>s.key==='current_session');
   db.currentSession = (cs && cs.value) ? cs.value : null;
+  const po = (settings||[]).find(s=>s.key==='proposals_open');
+  db.proposalsOpen = (po && po.value !== undefined) ? po.value : true; // default open
   // keep currentUser in sync (admin flag may have changed)
   if (currentUser) {
     const fresh = db.users.find(u=>u.id===currentUser.id);
@@ -574,6 +596,9 @@ async function showPage(page, data) {
     document.getElementById('pageHowTo').classList.add('active'); renderHowTo();
   } else if (page==='catalogue') {
     document.getElementById('pageCatalogue').classList.add('active'); renderCatalogue();
+  } else if (page==='wildcard') {
+    if (!currentUser) { showPage('auth',{next:'wildcard'}); return; }
+    document.getElementById('pageWildcard').classList.add('active'); renderWildcardPage();
   }
   renderNav(); renderHero(); renderVoteBanner();
 }
@@ -629,6 +654,8 @@ create table if not exists proposals (
   archived boolean default false,
   status text,
   session_number int,
+  is_wildcard boolean default false,
+  wildcard_status text,
   created_at timestamptz default now()
 );
 
@@ -679,7 +706,15 @@ alter table settings   disable row level security;
 -- Create your first admin account (change username/password as desired)
 insert into users (username, password, is_admin)
 values ('admin', 'admin', true)
-on conflict (username) do nothing;</pre>
+on conflict (username) do nothing;
+
+-- Default settings
+insert into settings (key, value) values ('proposals_open', 'true') on conflict (key) do nothing;
+
+-- Migration for existing installs (run these if upgrading from an older version):
+-- alter table proposals add column if not exists is_wildcard boolean default false;
+-- alter table proposals add column if not exists wildcard_status text;
+-- insert into settings (key, value) values ('proposals_open', 'true') on conflict (key) do nothing;</pre>
     </details>
   </div>`;
 }
@@ -689,7 +724,7 @@ function renderNav() {
   const voting = isVotingActive();
   let html = '';
   html += `<button onclick="showPage('howto')">How to Use</button>`;
-  html += `<button onclick="showPage('catalogue')">Catalogue</button>`;
+  html += `<button onclick="showPage('catalogue')">Civilopedia</button>`;
   if (currentUser) {
     if (currentUser.isAdmin) html += `<button onclick="showPage('admin')">Admin</button>`;
     html += `<span class="nav-user"><span style="color:var(--text2)">${escHtml(currentUser.username)}</span>`;
@@ -709,9 +744,13 @@ function renderHero() {
   const voting = isVotingActive();
   if (voting) {
     actions.innerHTML = `<button class="btn btn-gold" onclick="showPage('vote')">🗳 Cast Your Vote</button>`;
+  } else if (!db.proposalsOpen) {
+    actions.innerHTML = `<button class="btn btn-outline" disabled title="Proposals are currently closed">Proposals Closed</button>
+      <button class="btn btn-outline" onclick="showPage('new-proposal')" style="border-color:var(--gold-dim);color:var(--gold-dim)">✦ Submit Wildcard</button>`;
   } else {
     actions.innerHTML = currentUser
-      ? `<button class="btn btn-gold" onclick="showPage('new-proposal')">+ New Proposal</button>`
+      ? `<button class="btn btn-gold" onclick="showPage('new-proposal')">+ New Proposal</button>
+         <button class="btn btn-outline" onclick="showPage('wildcard')" style="border-color:var(--gold-dim);color:var(--gold)">✦ Wildcard</button>`
       : `<button class="btn btn-gold" onclick="showPage('auth')">Sign in to Propose</button>`;
   }
 }
@@ -769,7 +808,7 @@ function catPathStr(catId) { return getCatPath(catId).map(c=>c.name).join(' › 
 function switchFeedTab(tab) {
   currentFeedTab = tab;
   document.querySelectorAll('#pageLanding .tab').forEach((t,i)=>{
-    t.classList.toggle('active', ['all','addons','passed','failed','sessions'][i]===tab);
+    t.classList.toggle('active', ['all','addons','wildcards','passed','failed','sessions'][i]===tab);
   });
   renderFeed();
 }
@@ -780,13 +819,27 @@ function renderFeed() {
   if (!_cfg()) { el.innerHTML = _setupHtml(); return; }
 
   if (currentFeedTab==='all') {
-    const proposals = db.proposals.filter(p=>!p.parentId&&!p.archived);
+    const proposals = db.proposals.filter(p=>!p.parentId&&!p.archived&&!p.isWildcard);
     if (!proposals.length) { el.innerHTML=`<div class="empty-state"><h3>No proposals yet</h3><p>Be the first to propose a change.</p></div>`; return; }
     el.innerHTML = proposals.slice().reverse().map(p=>renderProposalCard(p)).join('');
   } else if (currentFeedTab==='addons') {
-    const addons = db.proposals.filter(p=>p.parentId&&!p.archived);
+    const addons = db.proposals.filter(p=>p.parentId&&!p.archived&&!p.isWildcard);
     if (!addons.length) { el.innerHTML=`<div class="empty-state"><h3>No add-on proposals yet</h3></div>`; return; }
     el.innerHTML = addons.slice().reverse().map(p=>{ const parent=db.proposals.find(pp=>pp.id===p.parentId); return renderProposalCard(p,parent); }).join('');
+  } else if (currentFeedTab==='wildcards') {
+    // Show approved wildcards to everyone; show pending/rejected to admins too
+    const isAdmin = currentUser && currentUser.isAdmin;
+    const wildcards = db.proposals.filter(p=>p.isWildcard&&!p.archived&&(isAdmin||p.wildcardStatus==='approved'));
+    if (!wildcards.length) { el.innerHTML=`<div class="empty-state"><h3>No wildcard proposals yet</h3><p>Wildcards are proposals that don't fit existing categories. They require admin approval before going to a vote.</p></div>`; return; }
+    // Group: pending first (admin only), then approved
+    const pending  = wildcards.filter(p=>p.wildcardStatus==='pending');
+    const approved = wildcards.filter(p=>p.wildcardStatus==='approved');
+    const rejected = wildcards.filter(p=>p.wildcardStatus==='rejected');
+    let html='';
+    if(isAdmin&&pending.length) html+=`<div class="section-title" style="margin-bottom:.75rem">⏳ Pending Review (${pending.length})</div>`+pending.map(p=>renderProposalCard(p)).join('');
+    if(approved.length) { if(html) html+=`<div class="section-title" style="margin:1.25rem 0 .75rem">✓ Approved for Voting (${approved.length})</div>`; html+=approved.map(p=>renderProposalCard(p)).join(''); }
+    if(isAdmin&&rejected.length) html+=`<div class="section-title" style="margin:1.25rem 0 .75rem">✗ Rejected (${rejected.length})</div>`+rejected.map(p=>renderProposalCard(p)).join('');
+    el.innerHTML=html;
   } else if (currentFeedTab==='passed'||currentFeedTab==='failed') {
     const status = currentFeedTab;
     const snums = [...new Set(db.proposals.filter(p=>p.status===status).map(p=>p.sessionNumber))].sort((a,b)=>b-a);
@@ -827,13 +880,14 @@ function renderProposalCard(p, parent) {
   const addonCount = !p.parentId ? db.proposals.filter(a=>a.parentId===p.id&&!a.archived).length : 0;
   const statusPill = p.status==='passed' ? `<span class="pill pill-green">Passed</span>` : p.status==='failed' ? `<span class="pill pill-red">Failed</span>` : '';
   const addonPill  = p.parentId ? `<span class="pill pill-gold">Add-on</span>` : '';
+  const wildcardPill = p.isWildcard ? (p.wildcardStatus==='pending'?`<span class="pill pill-warn">✦ Pending</span>`:p.wildcardStatus==='approved'?`<span class="pill pill-gold">✦ Wildcard</span>`:`<span class="pill pill-red">✦ Rejected</span>`) : '';
   const parentRef  = parent ? `<div class="text-xs text-dim mb-1">↳ Add-on to: <span class="text-gold">${escHtml(parent.title)}</span></div>` : '';
   const isAdmin    = currentUser && currentUser.isAdmin;
   return `<div class="card proposal-card" style="position:relative">
     <div style="cursor:pointer" onclick="showPage('proposal','${p.id}')">
       <div class="cat-path">${path.split(' › ').map(s=>`<span class="cat-chip">${escHtml(s)}</span>`).join('')}</div>
       ${parentRef}
-      <div class="card-header"><div class="card-title">${escHtml(p.title)}</div><div style="display:flex;gap:5px;flex-shrink:0">${statusPill}${addonPill}</div></div>
+      <div class="card-header"><div class="card-title">${escHtml(p.title)}</div><div style="display:flex;gap:5px;flex-shrink:0">${statusPill}${addonPill}${wildcardPill}</div></div>
       <div class="card-body" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${escHtml(p.body)}</div>
       <div class="card-meta" style="margin-top:8px;display:flex;gap:12px">
         <span>by <strong>${escHtml(p.author)}</strong></span><span>${timeAgo(p.createdAt)}</span>
@@ -855,6 +909,7 @@ function renderNewProposal() {
 }
 function buildNewProposalUI() {
   if (isVotingActive()) return `<div class="card"><p class="text-muted">Proposals are disabled during a voting session. Come back after the vote!</p></div>`;
+  if (!db.proposalsOpen) return `<div class="card"><p class="text-muted">New proposals are currently disabled by an administrator. Check back later!</p></div>`;
   return `<div class="cat-selector" id="catSelectorArea">${renderCatLevels()}</div><div id="proposalWriteArea"></div>`;
 }
 function renderCatLevels() {
@@ -962,7 +1017,7 @@ function renderProposalDetail(propId) {
     html+=`<div class="addon-section">
       <div class="flex justify-between items-center mb-2">
         <div class="section-title">Add-on Proposals (${addons.length})</div>
-        ${!voting&&currentUser?`<button class="btn btn-outline btn-sm" onclick="showAddonForm('${p.id}')">+ Add-on</button>`:''}
+        ${!voting&&currentUser&&(!p.isWildcard||p.wildcardStatus==='approved')?`<button class="btn btn-outline btn-sm" onclick="showAddonForm('${p.id}')">+ Add-on</button>`:''}
       </div>
       ${addons.length?addons.map(a=>{
         const aIsAdmin = currentUser && currentUser.isAdmin;
@@ -1028,8 +1083,62 @@ async function submitAddon(parentId) {
   const parent=db.proposals.find(p=>p.id===parentId);
   setLoading(true);
   try {
-    await sbPost('proposals',{title,body,category_id:parent.categoryId,parent_id:parentId,author:currentUser.username,author_id:currentUser.id,archived:false,status:null,session_number:null});
+    await sbPost('proposals',{title,body,category_id:parent.categoryId,parent_id:parentId,author:currentUser.username,author_id:currentUser.id,archived:false,status:null,session_number:null,is_wildcard:false,wildcard_status:null});
     await showPage('proposal',parentId);
+  } catch(e){setLoading(false);alert('Error: '+e.message);}
+}
+
+// ============================================================
+// WILDCARD PROPOSALS
+// ============================================================
+function renderWildcardPage() {
+  const el=document.getElementById('wildcardContent'); if(!el)return;
+  if (isVotingActive()) { el.innerHTML=`<div class="card"><p class="text-muted">Wildcard submissions are disabled during a voting session.</p></div>`; return; }
+  if (!db.proposalsOpen) { el.innerHTML=`<div class="card"><p class="text-muted">New proposals are currently disabled by an administrator.</p></div>`; return; }
+  // Show my pending wildcards
+  const myWildcards = db.proposals.filter(p=>p.isWildcard&&p.authorId===currentUser.id&&!p.archived);
+  let html='';
+  if(myWildcards.length){
+    html+=`<div class="mb-3"><div class="section-title" style="margin-bottom:.75rem">Your Wildcard Submissions</div>`;
+    html+=myWildcards.map(p=>`<div class="card" style="border-color:${p.wildcardStatus==='approved'?'var(--gold-dim)':p.wildcardStatus==='rejected'?'var(--danger)':'var(--border2)'}">
+      <div class="flex justify-between items-center mb-1">
+        <span class="bold text-sm">${escHtml(p.title)}</span>
+        ${p.wildcardStatus==='pending'?`<span class="pill pill-warn">⏳ Pending Review</span>`:p.wildcardStatus==='approved'?`<span class="pill pill-gold">✓ Approved</span>`:`<span class="pill pill-red">✗ Rejected</span>`}
+      </div>
+      <div class="text-muted text-xs">${timeAgo(p.createdAt)}</div>
+    </div>`).join('');
+    html+=`</div>`;
+  }
+  html+=`<div class="new-proposal-area">
+    <div class="section-title mb-2">Submit a Wildcard Proposal</div>
+    <div class="form-group"><label class="form-label">Title</label><input type="text" id="wcTitle" placeholder="Concise title for your wildcard proposal"/></div>
+    <div class="form-group"><label class="form-label">Why it doesn't fit existing categories</label><textarea id="wcContext" style="min-height:80px" placeholder="Briefly explain why this doesn't belong in any existing category…"></textarea></div>
+    <div class="form-group"><label class="form-label">Proposal</label><textarea id="wcBody" placeholder="Describe the change you'd like to see…"></textarea></div>
+    <button class="btn btn-gold" onclick="submitWildcard()">Submit for Review</button>
+  </div>`;
+  el.innerHTML=html;
+}
+async function submitWildcard() {
+  const title=document.getElementById('wcTitle').value.trim();
+  const context=document.getElementById('wcContext').value.trim();
+  const body=document.getElementById('wcBody').value.trim();
+  if(!title){alert('Please enter a title.');return;}
+  if(!body){alert('Please write your proposal.');return;}
+  setLoading(true);
+  try {
+    // Wildcards have no category_id; store context in body prefixed
+    const fullBody = context ? `[Context: ${context}]\n\n${body}` : body;
+    await sbPost('proposals',{title,body:fullBody,category_id:null,parent_id:null,author:currentUser.username,author_id:currentUser.id,archived:false,status:null,session_number:null,is_wildcard:true,wildcard_status:'pending'});
+    await showPage('wildcard');
+  } catch(e){setLoading(false);alert('Error: '+e.message);}
+}
+async function approveWildcard(propId, approved) {
+  if(!currentUser||!currentUser.isAdmin)return;
+  const newStatus = approved ? 'approved' : 'rejected';
+  setLoading(true);
+  try {
+    await sbPatch('proposals',`id=eq.${propId}`,{wildcard_status:newStatus});
+    await refreshDB(); setLoading(false); renderAdmin();
   } catch(e){setLoading(false);alert('Error: '+e.message);}
 }
 
@@ -1093,8 +1202,9 @@ function renderVotePage() {
   const s=db.currentSession;
   const myVote=db.votes.find(v=>v.userId===currentUser.id&&v.sessionId===s.id);
   if(myVote){el.innerHTML=`<div class="card"><h3 style="font-family:'IBM Plex Sans';font-size:1rem;margin-bottom:8px">✓ You have already voted</h3><p class="text-muted text-sm">Your vote has been recorded for Session #${s.sessionNumber}.</p></div>`;return;}
-  const leafCatsWithProps=db.categories.filter(c=>isLeafCat(c.id)).filter(c=>db.proposals.some(p=>p.categoryId===c.id&&!p.parentId&&!p.archived)).sort((a,b)=>a.name.localeCompare(b.name));
-  if(!leafCatsWithProps.length){el.innerHTML=`<div class="card"><p class="text-muted">No proposals to vote on.</p></div>`;return;}
+  const leafCatsWithProps=db.categories.filter(c=>isLeafCat(c.id)).filter(c=>db.proposals.some(p=>p.categoryId===c.id&&!p.parentId&&!p.archived&&!p.isWildcard)).sort((a,b)=>a.name.localeCompare(b.name));
+  const approvedWildcards=db.proposals.filter(p=>p.isWildcard&&p.wildcardStatus==='approved'&&!p.archived&&!p.parentId);
+  if(!leafCatsWithProps.length&&!approvedWildcards.length){el.innerHTML=`<div class="card"><p class="text-muted">No proposals to vote on.</p></div>`;return;}
 
   let html=`<p class="text-muted text-sm mb-3">For each category, vote for one proposal or "No to all".</p>`;
   leafCatsWithProps.forEach(cat=>{
@@ -1116,6 +1226,26 @@ function renderVotePage() {
     }
   });
   html+=`<button class="btn btn-gold" style="margin-top:1rem;width:100%;justify-content:center" onclick="submitVote()">Submit Vote</button>`;
+  // Wildcard voting block (if any approved wildcards exist)
+  if(approvedWildcards.length){
+    const wcSel=_voteSelections['__wildcards__'];
+    html=html.replace('<button class="btn btn-gold" style="margin-top:1rem;width:100%;justify-content:center" onclick="submitVote()">Submit Vote</button>','');
+    html+=`<div class="vote-category-block" style="border-color:var(--gold-dim)"><div class="vote-cat-header" style="color:var(--gold)">✦ Wildcard Proposals</div>
+      ${approvedWildcards.map(p=>`<div class="vote-option ${wcSel===p.id?'selected':''}" onclick="selectVoteOption('__wildcards__','${p.id}')"><div class="vote-radio"><div class="vote-radio-dot"></div></div><div class="vote-option-text"><div class="vote-option-title">${escHtml(p.title)}</div><div class="vote-option-body">${escHtml(p.body)}</div></div></div>`).join('')}
+      <div class="vote-option no-to-all ${wcSel==='none'?'selected':''}" onclick="selectVoteOption('__wildcards__','none')"><div class="vote-radio"><div class="vote-radio-dot"></div></div><div class="vote-option-text"><div class="vote-option-title no-to-all">No to all</div></div></div>
+    </div>`;
+    if(wcSel&&wcSel!=='none'){
+      const addons=db.proposals.filter(a=>a.parentId===wcSel&&!a.archived);
+      if(addons.length){
+        const addonSel=_addonVoteSelections[wcSel];
+        html+=`<div class="vote-category-block" style="margin-left:1.5rem;border-left:3px solid var(--gold-dim)"><div class="vote-cat-header" style="font-size:.78rem">Add-ons for: ${escHtml(db.proposals.find(p=>p.id===wcSel)?.title||'')}</div>
+          ${addons.map(a=>`<div class="vote-option ${addonSel===a.id?'selected':''}" onclick="selectAddonVote('${wcSel}','${a.id}')"><div class="vote-radio"><div class="vote-radio-dot"></div></div><div class="vote-option-text"><div class="vote-option-title">${escHtml(a.title)}</div><div class="vote-option-body">${escHtml(a.body)}</div></div></div>`).join('')}
+          <div class="vote-option no-to-all ${addonSel==='none'?'selected':''}" onclick="selectAddonVote('${wcSel}','none')"><div class="vote-radio"><div class="vote-radio-dot"></div></div><div class="vote-option-text"><div class="vote-option-title no-to-all">No to all</div></div></div>
+        </div>`;
+      }
+    }
+    html+=`<button class="btn btn-gold" style="margin-top:1rem;width:100%;justify-content:center" onclick="submitVote()">Submit Vote</button>`;
+  }
   el.innerHTML=html;
 }
 function selectVoteOption(catId,propId){_voteSelections[catId]=propId; if(propId==='none')delete _addonVoteSelections[catId]; renderVotePage();}
@@ -1123,7 +1253,8 @@ function selectAddonVote(parentId,addonId){_addonVoteSelections[parentId]=addonI
 
 async function submitVote() {
   const s=db.currentSession;
-  const leafCatsWithProps=db.categories.filter(c=>isLeafCat(c.id)).filter(c=>db.proposals.some(p=>p.categoryId===c.id&&!p.parentId&&!p.archived));
+  const leafCatsWithProps=db.categories.filter(c=>isLeafCat(c.id)).filter(c=>db.proposals.some(p=>p.categoryId===c.id&&!p.parentId&&!p.archived&&!p.isWildcard));
+  const approvedWildcards=db.proposals.filter(p=>p.isWildcard&&p.wildcardStatus==='approved'&&!p.archived&&!p.parentId);
   for(const cat of leafCatsWithProps){
     if(!_voteSelections[cat.id]){alert(`Please vote in all categories. Missing: ${cat.name}`);return;}
     if(_voteSelections[cat.id]!=='none'){
@@ -1131,6 +1262,7 @@ async function submitVote() {
       if(addons.length&&!_addonVoteSelections[_voteSelections[cat.id]]){alert('Please vote on add-ons for the proposal you selected.');return;}
     }
   }
+  if(approvedWildcards.length&&!_voteSelections['__wildcards__']){alert('Please vote in the Wildcard Proposals section.');return;}
   setLoading(true);
   try {
     await sbPost('votes',{user_id:currentUser.id,session_id:s.id,selections:_voteSelections,addon_selections:_addonVoteSelections});
@@ -1185,14 +1317,15 @@ function renderResults(sessionId) {
 // ============================================================
 function switchAdminTab(tab) {
   currentAdminTab=tab;
-  document.querySelectorAll('#pageAdmin .tab').forEach((t,i)=>t.classList.toggle('active',['categories','voting','users'][i]===tab));
+  document.querySelectorAll('#pageAdmin .tab').forEach((t,i)=>t.classList.toggle('active',['categories','voting','wildcards','users'][i]===tab));
   renderAdmin();
 }
 function renderAdmin() {
   const el=document.getElementById('adminContent');
-  if(currentAdminTab==='categories') el.innerHTML=renderAdminCategories();
-  else if(currentAdminTab==='voting')    el.innerHTML=renderAdminVoting();
-  else if(currentAdminTab==='users')     el.innerHTML=renderAdminUsers();
+  if(currentAdminTab==='categories')      el.innerHTML=renderAdminCategories();
+  else if(currentAdminTab==='voting')     el.innerHTML=renderAdminVoting();
+  else if(currentAdminTab==='wildcards')  el.innerHTML=renderAdminWildcards();
+  else if(currentAdminTab==='users')      el.innerHTML=renderAdminUsers();
 }
 function renderAdminCategories() {
   function tree(pid, depth) {
@@ -1259,10 +1392,24 @@ async function deleteCat(catId) {
 
 function renderAdminVoting() {
   const s=db.currentSession, sv=s?db.votes.filter(v=>v.sessionId===s.id).length:0;
-  let html=`<div class="admin-section"><h3>Voting Session</h3>`;
+  const propOpen = db.proposalsOpen !== false;
+  let html=`<div class="admin-section"><h3>Proposals Toggle</h3>
+    <p class="text-muted text-sm mb-2">Enable or disable the ability for users to submit new proposals and add-ons site-wide. This does not affect voting.</p>
+    <div class="card mb-2" style="border-color:${propOpen?'var(--success)':'var(--danger)'}">
+      <div class="flex items-center justify-between">
+        <div><span class="bold text-sm" style="color:${propOpen?'var(--green)':'var(--red)'}">${propOpen?'✓ Proposals are OPEN':'✗ Proposals are CLOSED'}</span><div class="text-muted text-xs" style="margin-top:3px">${propOpen?'Users can currently submit new proposals and add-ons.':'Users cannot currently submit new proposals or add-ons.'}</div></div>
+        <button class="btn ${propOpen?'btn-danger':'btn-success'} btn-sm" onclick="toggleProposalsOpen(${!propOpen})">${propOpen?'Close Proposals':'Open Proposals'}</button>
+      </div>
+    </div>
+  </div>
+  <div class="admin-section"><h3>Voting Session</h3>`;
   if(s&&s.votingActive&&Date.now()<s.endTime){
     html+=`<div class="card mb-2"><div class="text-sm mb-1"><span class="pill pill-red">LIVE</span> Session #${s.sessionNumber}</div><div class="text-muted text-sm">Ends: ${new Date(s.endTime).toLocaleString()}</div><div class="text-muted text-sm">Votes cast: ${sv}</div></div>
-    <button class="btn btn-danger btn-sm" onclick="endVotingNow()">End Voting Now</button>`;
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-danger btn-sm" onclick="endVotingNow()">End Voting Now</button>
+      <button class="btn btn-outline btn-sm" onclick="undoOpenVoting()" title="Revert voting back to the proposal phase without archiving anything">↩ Undo Open Voting</button>
+    </div>
+    <p class="text-dim text-xs" style="margin-top:6px">Undo Open Voting cancels the session and returns all proposals to active status — use this only if voting was started by mistake and no votes have been cast yet.</p>`;
   } else {
     html+=`<p class="text-muted text-sm mb-2">No active session.</p><button class="btn btn-gold btn-sm" onclick="startNewVoting()">Start Voting Session</button>`;
   }
@@ -1312,7 +1459,7 @@ async function finalizeSession() {
   const sessionVotes=db.votes.filter(v=>v.sessionId===s.id);
   const winners={}, addonWinners={};
   db.categories.filter(c=>isLeafCat(c.id)).forEach(cat=>{
-    const props=db.proposals.filter(p=>p.categoryId===cat.id&&!p.parentId&&!p.archived); if(!props.length)return;
+    const props=db.proposals.filter(p=>p.categoryId===cat.id&&!p.parentId&&!p.archived&&!p.isWildcard); if(!props.length)return;
     const tally={}; sessionVotes.forEach(v=>{const sel=v.selections[cat.id];if(sel)tally[sel]=(tally[sel]||0)+1;});
     if(!Object.keys(tally).length)return;
     const top=Object.entries(tally).sort((a,b)=>b[1]-a[1])[0][0];
@@ -1326,6 +1473,20 @@ async function finalizeSession() {
       }
     }
   });
+  // Tally wildcard votes
+  const wcTally={}; sessionVotes.forEach(v=>{const sel=v.selections['__wildcards__'];if(sel)wcTally[sel]=(wcTally[sel]||0)+1;});
+  if(Object.keys(wcTally).length){
+    const wcTop=Object.entries(wcTally).sort((a,b)=>b[1]-a[1])[0][0];
+    if(wcTop&&wcTop!=='none'){
+      winners[wcTop]=true;
+      const addons=db.proposals.filter(a=>a.parentId===wcTop&&!a.archived);
+      if(addons.length){
+        const at={}; sessionVotes.forEach(v=>{const sel=(v.addonSelections||{})[wcTop];if(sel)at[sel]=(at[sel]||0)+1;});
+        const atop=Object.entries(at).sort((a,b)=>b[1]-a[1])[0]?.[0];
+        if(atop&&atop!=='none')addonWinners[atop]=true;
+      }
+    }
+  }
   setLoading(true);
   try {
     for(const p of db.proposals.filter(p=>!p.archived&&!p.status)){
@@ -1339,6 +1500,90 @@ async function finalizeSession() {
   } catch(e){setLoading(false);alert('Error finalizing: '+e.message);}
 }
 function viewSessionResults(sessionId){showModal('Session Results',renderResults(sessionId),[]);}
+
+async function toggleProposalsOpen(open) {
+  if(!currentUser||!currentUser.isAdmin)return;
+  setLoading(true);
+  try {
+    await sbUpsert('settings',{key:'proposals_open',value:open});
+    await refreshDB(); setLoading(false); renderAdmin(); renderNav(); renderHero();
+  } catch(e){setLoading(false);alert('Error: '+e.message);}
+}
+
+async function undoOpenVoting() {
+  const s=db.currentSession; if(!s||!s.votingActive)return;
+  const sv=db.votes.filter(v=>v.sessionId===s.id).length;
+  if(sv>0){alert(`Cannot undo: ${sv} vote${sv!==1?'s have':' has'} already been cast. Use "End Voting Now" instead.`);return;}
+  if(!confirm('Undo opening the voting session? This will delete the session record and return all proposals to active status. Only do this if voting was started by mistake and no one has voted yet.'))return;
+  setLoading(true);
+  try {
+    await sbDelete('sessions',`id=eq.${s.id}`);
+    await sbUpsert('settings',{key:'current_session',value:null});
+    await refreshDB(); setLoading(false);
+    renderAdmin(); renderNav(); renderHero(); renderVoteBanner(); renderFeed();
+  } catch(e){setLoading(false);alert('Error: '+e.message);}
+}
+
+function renderAdminWildcards() {
+  const pending  = db.proposals.filter(p=>p.isWildcard&&p.wildcardStatus==='pending'&&!p.archived);
+  const approved = db.proposals.filter(p=>p.isWildcard&&p.wildcardStatus==='approved'&&!p.archived);
+  const rejected = db.proposals.filter(p=>p.isWildcard&&p.wildcardStatus==='rejected'&&!p.archived);
+  let html=`<div class="admin-section"><h3>Wildcard Approval Queue</h3>
+    <p class="text-muted text-sm" style="margin-bottom:1rem">Wildcard proposals are submitted by users when their idea doesn't fit existing categories. Approve them to include them in the next voting session, or reject them.</p>`;
+  if(!pending.length&&!approved.length&&!rejected.length){
+    html+=`<div class="empty-state" style="padding:2rem 0"><h3>No wildcard proposals</h3><p>Users can submit wildcards from the main page.</p></div>`;
+  }
+  if(pending.length){
+    html+=`<div class="mb-2"><div class="section-title" style="margin-bottom:.75rem">⏳ Pending Review (${pending.length})</div>`;
+    pending.forEach(p=>{
+      const addons=db.proposals.filter(a=>a.wildcardParentId===p.id||a.parentId===p.id);
+      html+=`<div class="card mb-1" style="border-color:var(--warn)">
+        <div class="flex justify-between items-center mb-1 flex-wrap" style="gap:8px">
+          <div><span class="bold">${escHtml(p.title)}</span> <span class="text-dim text-xs">by ${escHtml(p.author)} · ${timeAgo(p.createdAt)}</span></div>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-success btn-sm" onclick="approveWildcard('${p.id}',true)">✓ Approve</button>
+            <button class="btn btn-danger btn-sm" onclick="approveWildcard('${p.id}',false)">✗ Reject</button>
+            <button class="btn btn-ghost btn-sm" onclick="showPage('proposal','${p.id}')">View ↗</button>
+          </div>
+        </div>
+        <div class="text-muted text-sm" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${escHtml(p.body)}</div>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+  if(approved.length){
+    html+=`<div class="mb-2"><div class="section-title" style="margin-bottom:.75rem">✓ Approved (${approved.length})</div>`;
+    approved.forEach(p=>{
+      html+=`<div class="card mb-1" style="border-color:var(--gold-dim)">
+        <div class="flex justify-between items-center flex-wrap" style="gap:8px">
+          <div><span class="bold">${escHtml(p.title)}</span> <span class="text-dim text-xs">by ${escHtml(p.author)} · ${timeAgo(p.createdAt)}</span></div>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-danger btn-sm" onclick="approveWildcard('${p.id}',false)">Revoke</button>
+            <button class="btn btn-ghost btn-sm" onclick="showPage('proposal','${p.id}')">View ↗</button>
+          </div>
+        </div>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+  if(rejected.length){
+    html+=`<div class="mb-2"><div class="section-title" style="margin-bottom:.75rem">✗ Rejected (${rejected.length})</div>`;
+    rejected.forEach(p=>{
+      html+=`<div class="card mb-1" style="opacity:.6">
+        <div class="flex justify-between items-center flex-wrap" style="gap:8px">
+          <div><span class="bold">${escHtml(p.title)}</span> <span class="text-dim text-xs">by ${escHtml(p.author)} · ${timeAgo(p.createdAt)}</span></div>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-outline btn-sm" onclick="approveWildcard('${p.id}',true)">Re-approve</button>
+            <button class="btn btn-ghost btn-sm text-red" onclick="removeProposal('${p.id}',true)">Remove</button>
+          </div>
+        </div>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+  html+=`</div>`;
+  return html;
+}
 
 function renderAdminUsers() {
   return `<div class="admin-section"><h3>User Accounts</h3>
@@ -1501,6 +1746,12 @@ function renderHowTo(){
       <div class="howto-step"><div class="howto-step-num">2</div><div class="howto-step-content"><div class="howto-step-title">Write your Add-on</div><div class="howto-step-body">An add-on modifies or extends a main proposal. During voting, if voters choose the parent proposal, they also get to vote on its add-ons.</div></div></div>
       <div class="howto-tip"><strong>Note:</strong> Add-ons only go into voting if their parent proposal wins.</div>
     </div>
+    <div class="howto-section"><h3>✦ Wildcard Proposals</h3>
+      <div class="howto-step"><div class="howto-step-num">1</div><div class="howto-step-content"><div class="howto-step-title">Idea doesn't fit a category?</div><div class="howto-step-body">Click the <strong>✦ Wildcard</strong> button on the main page. Wildcard Proposals are for ideas that don't fit any existing category in the system.</div></div></div>
+      <div class="howto-step"><div class="howto-step-num">2</div><div class="howto-step-content"><div class="howto-step-title">Await admin review</div><div class="howto-step-body">After submission, your wildcard enters a pending queue. An admin will review it and either approve it for voting or reject it.</div></div></div>
+      <div class="howto-step"><div class="howto-step-num">3</div><div class="howto-step-content"><div class="howto-step-title">If approved, it goes to a vote</div><div class="howto-step-body">Approved wildcards appear in their own section during voting sessions, alongside regular category proposals.</div></div></div>
+      <div class="howto-tip"><strong>Note:</strong> Wildcards are a special pathway — they exist for genuine edge cases. If your idea can fit in a category, please use the normal proposal form instead.</div>
+    </div>
     <div class="howto-section"><h3>💬 Discussion</h3>
       <div class="howto-step"><div class="howto-step-num">1</div><div class="howto-step-content"><div class="howto-step-title">Open any Proposal</div><div class="howto-step-body">Click any proposal card to open the full detail view and read the existing discussion.</div></div></div>
       <div class="howto-step"><div class="howto-step-num">2</div><div class="howto-step-content"><div class="howto-step-title">Post a Comment or Reply</div><div class="howto-step-body">Use the discussion box at the bottom to share your thoughts. Hit <strong>↩ Reply</strong> on any comment to reply directly to that person.</div></div></div>
@@ -1510,8 +1761,8 @@ function renderHowTo(){
       <div class="howto-step"><div class="howto-step-num">2</div><div class="howto-step-content"><div class="howto-step-title">Cast Your Vote</div><div class="howto-step-body">For each category that has proposals, pick the one you support — or choose "No to all". If you pick a proposal that has add-ons, you'll also vote on those.</div></div></div>
       <div class="howto-step"><div class="howto-step-num">3</div><div class="howto-step-content"><div class="howto-step-title">Results are automatic</div><div class="howto-step-body">When the session ends, votes are tallied automatically. Winners move to the <strong>Passed</strong> tab; the rest to <strong>Failed</strong>. Full results are in the <strong>Past Sessions</strong> tab.</div></div></div>
     </div>
-    <div class="howto-section"><h3>📚 Category Catalogue</h3>
-      <div class="howto-step"><div class="howto-step-num">1</div><div class="howto-step-content"><div class="howto-step-title">Browse all categories</div><div class="howto-step-body">The <strong>Catalogue</strong> in the top bar shows every category and sub-category with any admin-written guidance. Use it to understand where your ideas belong before writing a proposal.</div></div></div>
+    <div class="howto-section"><h3>📚 Civilopedia</h3>
+      <div class="howto-step"><div class="howto-step-num">1</div><div class="howto-step-content"><div class="howto-step-title">Browse all categories</div><div class="howto-step-body">The <strong>Civilopedia</strong> in the top bar shows every category and sub-category with any admin-written guidance. Use it to understand where your ideas belong before writing a proposal.</div></div></div>
     </div>`;
 }
 
@@ -1569,3 +1820,4 @@ async function testConnection() {
 </script>
 </body>
 </html>
+
