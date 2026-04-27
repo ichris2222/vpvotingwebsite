@@ -498,21 +498,21 @@ async function login(username, password) {
   // plain-text password stored in DB (same design as original)
   if (u.password !== password) return false;
   currentUser = {id:u.id, username:u.username, isAdmin:u.is_admin, _pass:password};
-  sessionStorage.setItem('vp_uid', u.id);
-  sessionStorage.setItem('vp_pw',  password);
+  localStorage.setItem('vp_uid', u.id);
+  localStorage.setItem('vp_pw',  password);
   return true;
 }
 
 function logout() {
   currentUser = null;
-  sessionStorage.removeItem('vp_uid');
-  sessionStorage.removeItem('vp_pw');
+  localStorage.removeItem('vp_uid');
+  localStorage.removeItem('vp_pw');
   showPage('landing');
 }
 
 async function tryRestoreSession() {
-  const uid = sessionStorage.getItem('vp_uid');
-  const pw  = sessionStorage.getItem('vp_pw');
+  const uid = localStorage.getItem('vp_uid');
+  const pw  = localStorage.getItem('vp_pw');
   if (!uid || !pw) return;
   try {
     const rows = await sbGet('users', `id=eq.${uid}&select=*`);
@@ -521,9 +521,8 @@ async function tryRestoreSession() {
       currentUser = {id:u.id, username:u.username, isAdmin:u.is_admin, _pass:pw};
     }
   } catch(e) {
-    // Session restore failed (e.g. DB offline) — just stay logged out
-    sessionStorage.removeItem('vp_uid');
-    sessionStorage.removeItem('vp_pw');
+    localStorage.removeItem('vp_uid');
+    localStorage.removeItem('vp_pw');
   }
 }
 
@@ -841,7 +840,7 @@ function renderProposalCard(p, parent) {
         ${cmtCount?`<span>💬 ${cmtCount}</span>`:''}${addonCount?`<span>🔗 ${addonCount} add-ons</span>`:''}
       </div>
     </div>
-    ${isAdmin?`<button class="btn btn-danger btn-sm" style="position:absolute;top:10px;right:10px;z-index:2" onclick="event.stopPropagation();adminRemoveProposal('${p.id}')">Remove</button>`:''}
+    ${isAdmin?`<button class="btn btn-danger btn-sm" style="position:absolute;top:10px;right:10px;z-index:2" onclick="event.stopPropagation();removeProposal('${p.id}',true)">Remove</button>`:''}
   </div>`;
 }
 
@@ -943,15 +942,18 @@ function renderProposalDetail(propId) {
   const statusPill = p.status==='passed'?`<span class="pill pill-green">Passed</span>`:p.status==='failed'?`<span class="pill pill-red">Failed</span>`:'';
   const voting   = isVotingActive();
   const isAdmin  = currentUser && currentUser.isAdmin;
+  const isOwner  = currentUser && currentUser.id === p.authorId;
+  const hasBeenVotedOn = p.sessionNumber != null; // once archived into a session, only admin can delete
+  const canDelete = isAdmin || (isOwner && !hasBeenVotedOn);
 
   let html=`
     <div class="flex items-center gap-2 mb-3"><button class="btn btn-ghost btn-sm" onclick="showPage('landing')">← Back</button></div>
     <div class="cat-path">${path.map(c=>`<span class="cat-chip">${escHtml(c.name)}</span>`).join('')}</div>
     ${parent?`<div class="text-sm text-dim mb-1">Add-on to: <a class="text-gold" href="javascript:void(0)" onclick="showPage('proposal','${parent.id}')">${escHtml(parent.title)}</a></div>`:''}
-    <div class="flex items-center gap-2" style="margin-bottom:.5rem">
+    <div class="flex items-center gap-2" style="margin-bottom:.5rem;flex-wrap:wrap">
       <h2 style="font-size:1.7rem">${escHtml(p.title)}</h2>${statusPill}
       ${p.parentId?`<span class="pill pill-gold">Add-on</span>`:''}
-      ${isAdmin?`<button class="btn btn-danger btn-sm" style="margin-left:auto" onclick="adminRemoveProposal('${p.id}')">Remove Proposal</button>`:''}
+      ${canDelete?`<button class="btn btn-danger btn-sm" style="margin-left:auto" onclick="removeProposal('${p.id}',${isAdmin})">${isAdmin?'Remove':'Delete'} ${p.parentId?'Add-on':'Proposal'}</button>`:''}
     </div>
     <div class="card-meta">by <strong>${escHtml(p.author)}</strong> · ${timeAgo(p.createdAt)}</div>
     <div class="proposal-content">${escHtml(p.body)}</div>`;
@@ -962,32 +964,41 @@ function renderProposalDetail(propId) {
         <div class="section-title">Add-on Proposals (${addons.length})</div>
         ${!voting&&currentUser?`<button class="btn btn-outline btn-sm" onclick="showAddonForm('${p.id}')">+ Add-on</button>`:''}
       </div>
-      ${addons.length?addons.map(a=>`
-        <div class="addon-card">
+      ${addons.length?addons.map(a=>{
+        const aIsAdmin = currentUser && currentUser.isAdmin;
+        const aIsOwner = currentUser && currentUser.id === a.authorId;
+        const aVoted   = a.sessionNumber != null;
+        const aCanDel  = aIsAdmin || (aIsOwner && !aVoted);
+        return `<div class="addon-card">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
             <div style="font-weight:600;cursor:pointer" onclick="showPage('proposal','${a.id}')">${escHtml(a.title)}</div>
-            ${isAdmin?`<button class="btn btn-danger btn-sm" style="margin-left:8px;flex-shrink:0" onclick="adminRemoveProposal('${a.id}')">Remove</button>`:''}
+            ${aCanDel?`<button class="btn btn-danger btn-sm" style="margin-left:8px;flex-shrink:0" onclick="removeProposal('${a.id}',${aIsAdmin})">${aIsAdmin?'Remove':'Delete'}</button>`:''}
           </div>
           <div style="font-size:.85rem;color:var(--text2);margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden" onclick="showPage('proposal','${a.id}')">${escHtml(a.body)}</div>
           <div style="font-size:.78rem;color:var(--text3)" onclick="showPage('proposal','${a.id}')">by ${escHtml(a.author)} · ${timeAgo(a.createdAt)}</div>
-        </div>`).join(''):`<p class="text-dim text-sm">No add-on proposals yet.</p>`}
+        </div>`;
+      }).join(''):`<p class="text-dim text-sm">No add-on proposals yet.</p>`}
       <div id="addonFormArea"></div>
     </div>`;
   }
 
   html+=`<hr class="divider"><div class="comments-section">
     <div class="section-title">Discussion (${comments.length})</div>
-    ${comments.length?comments.map(c=>`
-      <div class="comment" id="comment_${c.id}">
+    ${comments.length?comments.map(c=>{
+      const cIsAdmin = currentUser && currentUser.isAdmin;
+      const cIsOwner = currentUser && currentUser.id === c.authorId;
+      const cCanDel  = cIsAdmin || cIsOwner;
+      return `<div class="comment" id="comment_${c.id}">
         <div class="comment-author"><strong>${escHtml(c.author)}</strong> · ${timeAgo(c.createdAt)}
           ${c.replyTo?`<span class="text-dim text-xs" style="margin-left:6px">↳ replying to <strong>${escHtml(c.replyTo)}</strong></span>`:''}
         </div>
         <div class="comment-body">${escHtml(c.body)}</div>
         <div style="display:flex;gap:8px;margin-top:6px">
           ${currentUser?`<button class="btn btn-ghost btn-sm" style="font-size:.78rem;padding:2px 8px" onclick="setReplyTo('${p.id}','${c.author}','${c.id}')">↩ Reply</button>`:''}
-          ${isAdmin?`<button class="btn btn-ghost btn-sm text-red" style="font-size:.78rem;padding:2px 8px" onclick="adminRemoveComment('${c.id}','${p.id}')">Remove</button>`:''}
+          ${cCanDel?`<button class="btn btn-ghost btn-sm text-red" style="font-size:.78rem;padding:2px 8px" onclick="removeComment('${c.id}','${p.id}')">Delete</button>`:''}
         </div>
-      </div>`).join(''):`<p class="text-dim text-sm" style="padding:1rem 0">No comments yet. Be the first!</p>`}
+      </div>`;
+    }).join(''):`<p class="text-dim text-sm" style="padding:1rem 0">No comments yet. Be the first!</p>`}
     ${currentUser?`<div class="comment-input-area">
       <div id="replyBanner_${p.id}" style="display:none;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:6px 12px;margin-bottom:8px;font-size:.82rem;color:var(--text2)">
         <span id="replyBannerText"></span>
@@ -1043,21 +1054,29 @@ async function submitComment(propId) {
     await showPage('proposal',propId);
   } catch(e){setLoading(false);alert('Error: '+e.message);}
 }
-async function adminRemoveProposal(propId) {
-  if(!currentUser||!currentUser.isAdmin)return;
-  if(!confirm('Remove this proposal? This cannot be undone.'))return;
+async function removeProposal(propId, isAdmin) {
+  if(!currentUser) return;
+  const p = db.proposals.find(pr=>pr.id===propId);
+  if(!p) return;
+  // Non-admins can only delete their own unvoted proposals
+  if(!isAdmin && (p.authorId !== currentUser.id || p.sessionNumber != null)) return;
+  if(!confirm(`${isAdmin?'Remove':'Delete'} this ${p.parentId?'add-on':'proposal'}? This cannot be undone.`)) return;
   setLoading(true);
   try {
-    const addons=db.proposals.filter(p=>p.parentId===propId).map(p=>p.id);
+    const addons = db.proposals.filter(a=>a.parentId===propId).map(a=>a.id);
     for (const id of [propId,...addons]) await sbDelete('comments',`proposal_id=eq.${id}`).catch(()=>{});
     if(addons.length) await sbDelete('proposals',`parent_id=eq.${propId}`).catch(()=>{});
     await sbDelete('proposals',`id=eq.${propId}`);
-    await showPage('landing');
+    // If it was an add-on, go back to parent; otherwise go to landing
+    if(p.parentId) { await showPage('proposal', p.parentId); } else { await showPage('landing'); }
   } catch(e){setLoading(false);alert('Error: '+e.message);}
 }
-async function adminRemoveComment(commentId,propId) {
-  if(!currentUser||!currentUser.isAdmin)return;
-  if(!confirm('Remove this comment?'))return;
+async function removeComment(commentId, propId) {
+  if(!currentUser) return;
+  const c = db.comments.find(cm=>cm.id===commentId);
+  if(!c) return;
+  if(!currentUser.isAdmin && c.authorId !== currentUser.id) return;
+  if(!confirm('Delete this comment?')) return;
   setLoading(true);
   try { await sbDelete('comments',`id=eq.${commentId}`); await showPage('proposal',propId); }
   catch(e){setLoading(false);alert('Error: '+e.message);}
@@ -1535,7 +1554,17 @@ async function testConnection() {
     await refreshDB().catch(e=>console.error('Initial load:',e));
   }
   setLoading(false);
-  renderNav(); renderHero(); renderFeed(); renderVoteBanner();
+  // Handle direct #proposal/ID links (e.g. opened in new tab)
+  const hash = location.hash;
+  if (hash.startsWith('#proposal/')) {
+    const propId = hash.replace('#proposal/', '');
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.getElementById('pageProposal').classList.add('active');
+    renderProposalDetail(propId);
+    renderNav(); renderHero(); renderVoteBanner();
+  } else {
+    renderNav(); renderHero(); renderFeed(); renderVoteBanner();
+  }
 })();
 </script>
 </body>
